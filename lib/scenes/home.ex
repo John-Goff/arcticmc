@@ -18,6 +18,7 @@ defmodule Arcticmc.Scene.Home do
   """
 
   @text_size 24
+  @graph Graph.build(font: :roboto, font_size: @text_size)
 
   # ============================================================================
   # setup
@@ -28,11 +29,7 @@ defmodule Arcticmc.Scene.Home do
     # a transparent full-screen rectangle to catch user input
     {:ok, %ViewPort.Status{size: {width, height}}} = ViewPort.info(opts[:viewport])
 
-    graph =
-      Graph.build(font: :roboto, font_size: @text_size)
-      |> add_specs_to_graph([
-        rect_spec({width, height})
-      ])
+    graph = rect(@graph, {width, height})
 
     send(self(), {:new_path, Paths.get(:tv)})
 
@@ -42,11 +39,9 @@ defmodule Arcticmc.Scene.Home do
   def handle_info({:new_path, path}, graph) do
     files = File.ls!(path)
 
-    graph
-    |> render_files(files)
-    |> push_graph()
+    graph = graph |> render_files(files)
 
-    {:noreply, graph}
+    {:noreply, graph, push: graph}
   end
 
   def handle_input(event, _context, state) do

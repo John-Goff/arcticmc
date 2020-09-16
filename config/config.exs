@@ -11,7 +11,7 @@ config :arcticmc, :viewport, %{
     %{
       module: Scenic.Driver.Glfw,
       name: :glfw,
-      opts: [resizeable: false, title: "arcticmc"]
+      opts: [resizeable: true, title: "arcticmc"]
     }
   ]
 }
