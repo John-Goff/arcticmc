@@ -2,6 +2,7 @@ defmodule Arcticmc.Scene.Home do
   use Scenic.Scene
   require Logger
 
+  alias Arcticmc.Paths
   alias Scenic.Graph
   alias Scenic.ViewPort
 
@@ -27,24 +28,35 @@ defmodule Arcticmc.Scene.Home do
     # a transparent full-screen rectangle to catch user input
     {:ok, %ViewPort.Status{size: {width, height}}} = ViewPort.info(opts[:viewport])
 
-    # show the version of scenic and the glfw driver
-    scenic_ver = Application.spec(:scenic, :vsn) |> to_string()
-    glfw_ver = Application.spec(:scenic_driver_glfw, :vsn) |> to_string()
-
     graph =
       Graph.build(font: :roboto, font_size: @text_size)
       |> add_specs_to_graph([
-        text_spec("scenic: v" <> scenic_ver, translate: {20, 40}),
-        text_spec("glfw: v" <> glfw_ver, translate: {20, 40 + @text_size}),
-        text_spec(@note, translate: {20, 120}),
         rect_spec({width, height})
       ])
 
+    send(self(), {:new_path, Paths.get(:tv)})
+
     {:ok, graph, push: graph}
+  end
+
+  def handle_info({:new_path, path}, graph) do
+    files = File.ls!(path)
+
+    graph
+    |> render_files(files)
+    |> push_graph()
+
+    {:noreply, graph}
   end
 
   def handle_input(event, _context, state) do
     Logger.info("Received event: #{inspect(event)}")
     {:noreply, state}
+  end
+
+  defp render_files(graph, files) do
+    add_specs_to_graph(graph, Enum.map(Enum.with_index(files), fn {file, idx} ->
+      text_spec(file, translate: {10, idx * 20}, text_height: 20)
+    end))
   end
 end
