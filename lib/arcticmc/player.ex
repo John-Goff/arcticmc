@@ -19,8 +19,8 @@ defmodule Arcticmc.Player do
 
     parent_dir = Paths.parent_directory(path)
 
-    parent_dir = if IO.inspect(Enum.all?(File.ls!(parent_dir), &is_played?/1)) do
-      IO.inspect(mark_played(parent_dir))
+    parent_dir = if Enum.all?(File.ls!(parent_dir), &is_played?/1) do
+      mark_played(parent_dir)
     else
       parent_dir
     end
@@ -38,7 +38,7 @@ defmodule Arcticmc.Player do
 
   def mark_played(path) do
     new_path = add_played_to_path(path)
-    IO.inspect(File.rename(path, new_path))
+    File.rename(path, new_path)
     new_path
   end
 
