@@ -10,6 +10,8 @@ defmodule Arcticmc.Player do
   def played, do: @played
 
   def play_file(path) do
+    System.cmd("vlc", ["--fullscreen", path])
+
     path =
       if is_played?(path) do
         path
@@ -19,17 +21,11 @@ defmodule Arcticmc.Player do
 
     parent_dir = Paths.parent_directory(path)
 
-    parent_dir = if Enum.all?(File.ls!(parent_dir), &is_played?/1) do
+    if Enum.all?(File.ls!(parent_dir), &is_played?/1) do
       mark_played(parent_dir)
     else
       parent_dir
     end
-
-    filename = path |> Path.split() |> List.last()
-    new_file = Path.join([parent_dir, filename])
-
-    System.cmd("vlc", ["--fullscreen", new_file])
-    parent_dir
   end
 
   def is_played?(path) do
