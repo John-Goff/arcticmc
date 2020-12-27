@@ -20,29 +20,24 @@ defmodule Arcticmc do
   end
 
   def initialize_config() do
-    get_config_contents()
-    |> String.split("\n")
-    |> Enum.each(fn line ->
-      line_data = String.split(line, ": ")
-      if match?([_, _], line_data) do
-        [key, value] = line_data
-        Paths.set(key, value)
-      end
+    _get_config_contents()
+    |> Enum.each(fn {key, value} ->
+      Paths.set(key, value)
     end)
   end
 
-  defp get_config_contents() do
+  defp _get_config_contents() do
     # load paths into persistent term for later use
     path = Paths.config_path()
     File.mkdir_p!(path)
-    config_file = Path.join([path, "config"])
+    config_file = Path.join([path, "config.yaml"])
 
-    with {:ok, config_data} <- File.read(config_file) do
+    with {:ok, config_data} <- YamlElixir.read_from_file(config_file) do
       config_data
     else
-      {:error, :enoent} ->
-        File.touch(config_file)
-        ""
+      {:error, %YamlElixir.FileNotFoundError{}} ->
+        File.cp(Path.join([:code.priv_dir(:arcticmc), "config_sample.yaml"]), config_file)
+        YamlElixir.read_from_file!(config_file)
     end
   end
 end
