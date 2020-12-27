@@ -16,9 +16,9 @@ defmodule Arcticmc.PlayerTest do
 
   describe "add_played_to_path/1" do
     test "adds a #{@played} character to the filename" do
-      assert Subject.add_played_to_path("filename") =~ @played
-      assert Subject.add_played_to_path("filename.mp4") =~ @played
-      assert Subject.add_played_to_path("/home/user/Movies/filename.mp4") =~ @played
+      assert Subject.add_played_to_path("filename") == "filename#{@played}"
+      assert Subject.add_played_to_path("filename.mp4") == "filename#{@played}.mp4"
+      assert Subject.add_played_to_path("/home/user/Movies/filename.mp4") == "/home/user/Movies/filename#{@played}.mp4"
     end
 
     test "#{@played} character should be before extension" do
