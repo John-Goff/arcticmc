@@ -30,7 +30,7 @@ defmodule Arcticmc.Player do
   end
 
   defp _open_player(path) do
-    options = [path]
+    options = ["--rate #{Config.get(:playback_speed)}", path]
 
     options =
       if Config.get(:fullscreen) do
