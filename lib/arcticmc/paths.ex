@@ -74,6 +74,10 @@ defmodule Arcticmc.Paths do
   def list_items_to_print(directory) do
     directory
     |> File.ls!()
+    |> Enum.reject(fn
+      "." <> _str -> true
+      _str -> false
+    end)
     |> Enum.map(fn item -> Path.join([directory, item]) end)
     |> (fn paths -> [".." | paths] end).()
   end

@@ -13,10 +13,12 @@ defmodule CLI do
   end
 
   defp print_current_directory(nil) do
+    IO.puts("Home")
     print_paths(Paths.list_items_to_print(nil), offset: 1)
   end
 
   defp print_current_directory(directory) do
+    IO.puts("Current Directory: #{Paths.file_name_without_extension(directory)}")
     print_paths(Paths.list_items_to_print(directory))
   end
 
@@ -57,10 +59,10 @@ defmodule CLI do
   end
 
   defp process_input(directory, "n\n") do
-    next = Enum.find(File.ls!(directory), fn s -> not Player.is_played?(s) end)
+    next =
+      Enum.find(tl(Paths.list_items_to_print(directory)), fn s -> not Player.is_played?(s) end)
 
-    [directory, next]
-    |> Path.join()
+    next
     |> play_or_select()
     |> main_loop()
   end
