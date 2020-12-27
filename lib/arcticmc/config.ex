@@ -26,8 +26,11 @@ defmodule Arcticmc.Config do
 
   def get(key) when key in @allowed_options, do: :persistent_term.get({__MODULE__, key})
 
-  def set(key, path) when key in @string_allowed_options, do: set(String.to_existing_atom(key), path)
-  def set(key, path) when key in @allowed_options, do: :persistent_term.put({__MODULE__, key}, path)
+  def set(key, path) when key in @string_allowed_options,
+    do: set(String.to_existing_atom(key), path)
+
+  def set(key, path) when key in @allowed_options,
+    do: :persistent_term.put({__MODULE__, key}, path)
 
   def initialize_config() do
     _get_config_contents()
@@ -51,6 +54,4 @@ defmodule Arcticmc.Config do
         YamlElixir.read_from_file!(config_file)
     end
   end
-
-  
 end

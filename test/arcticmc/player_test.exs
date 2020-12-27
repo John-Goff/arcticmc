@@ -18,11 +18,17 @@ defmodule Arcticmc.PlayerTest do
     test "adds a #{@played} character to the filename" do
       assert Subject.add_played_to_path("filename") == "filename#{@played}"
       assert Subject.add_played_to_path("filename.mp4") == "filename#{@played}.mp4"
-      assert Subject.add_played_to_path("/home/user/Movies/filename.mp4") == "/home/user/Movies/filename#{@played}.mp4"
+
+      assert Subject.add_played_to_path("/home/user/Movies/filename.mp4") ==
+               "/home/user/Movies/filename#{@played}.mp4"
     end
 
     test "#{@played} character should be before extension" do
-      assert "mp4" == "filename.mp4" |> Subject.add_played_to_path() |> String.split("#{@played}.") |> List.last()
+      assert "mp4" ==
+               "filename.mp4"
+               |> Subject.add_played_to_path()
+               |> String.split("#{@played}.")
+               |> List.last()
     end
   end
 end

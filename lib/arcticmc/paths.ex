@@ -20,7 +20,7 @@ defmodule Arcticmc.Paths do
       {directory, _} when is_binary(directory) -> directory
       {nil, directory} when is_binary(directory) -> :filename.basedir(:user_config, "arcticmc")
       {nil, nil} -> Path.expand("~/.arcticmc")
-    end 
+    end
   end
 
   def file_name_without_extension(path) do

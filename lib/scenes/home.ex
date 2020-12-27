@@ -50,8 +50,11 @@ defmodule Arcticmc.Scene.Home do
   end
 
   defp render_files(graph, files) do
-    add_specs_to_graph(graph, Enum.map(Enum.with_index(files), fn {file, idx} ->
-      text_spec(file, translate: {10, idx * 20}, text_height: 20)
-    end))
+    add_specs_to_graph(
+      graph,
+      Enum.map(Enum.with_index(files), fn {file, idx} ->
+        text_spec(file, translate: {10, idx * 20}, text_height: 20)
+      end)
+    )
   end
 end

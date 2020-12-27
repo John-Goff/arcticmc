@@ -3,6 +3,7 @@ defmodule Arcticmc.Player do
   Handles playing and renaming files.
   """
 
+  alias Arcticmc.Config
   alias Arcticmc.Paths
 
   @played "✓"
@@ -10,7 +11,7 @@ defmodule Arcticmc.Player do
   def played, do: @played
 
   def play_file(path) do
-    System.cmd("vlc", ["--fullscreen", path])
+    _open_player(path)
 
     path =
       if is_played?(path) do
@@ -26,6 +27,19 @@ defmodule Arcticmc.Player do
     else
       parent_dir
     end
+  end
+
+  defp _open_player(path) do
+    options = [path]
+
+    options =
+      if Config.get(:fullscreen) do
+        ["--fullscreen" | options]
+      else
+        options
+      end
+
+    System.cmd("vlc", options)
   end
 
   def is_played?(path) do
