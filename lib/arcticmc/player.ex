@@ -28,7 +28,7 @@ defmodule Arcticmc.Player do
     filename = path |> Path.split() |> List.last()
     new_file = Path.join([parent_dir, filename])
 
-    System.cmd("vlc", [new_file])
+    System.cmd("vlc", ["--fullscreen", new_file])
     parent_dir
   end
 
