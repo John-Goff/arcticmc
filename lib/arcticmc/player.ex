@@ -43,7 +43,7 @@ defmodule Arcticmc.Player do
   end
 
   def add_played_to_path(path) do
-    if File.dir?(path) do
+    if File.dir?(path) or not String.contains?(path, ".") do
       path <> @played
     else
       [working | rest_path] =
