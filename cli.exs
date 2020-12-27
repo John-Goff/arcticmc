@@ -1,3 +1,4 @@
+alias Arcticmc.Config
 alias Arcticmc.Paths
 alias Arcticmc.Player
 
@@ -91,5 +92,5 @@ defmodule CLI do
   end
 end
 
-Arcticmc.initialize_config()
+Config.initialize_config()
 CLI.main_loop(nil)
