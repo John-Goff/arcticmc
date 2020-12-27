@@ -98,6 +98,7 @@ defmodule Arcticmc.CLI do
     if File.dir?(selection) do
       selection
     else
+      IO.puts("Playing #{selection}")
       Player.play_file(selection)
     end
   end

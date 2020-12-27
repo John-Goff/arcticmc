@@ -39,7 +39,7 @@ defmodule Arcticmc.Player do
         options
       end
 
-    System.cmd("vlc", options)
+    System.cmd("vlc", options, stderr_to_stdout: true)
   end
 
   def is_played?(path) do
