@@ -7,28 +7,16 @@ defmodule CLI do
   def main_loop(directory) do
     IO.puts("Please select a directory or file")
     print_current_directory(directory)
+    IO.puts("q to quit, n to play next unplayed file")
     process_input(directory, IO.gets("> "))
   end
 
   defp print_current_directory(nil) do
-    Paths.allowed_paths()
-    |> Enum.map(fn type ->
-      try do
-        Paths.get(type)
-      rescue
-        _ -> ""
-      end
-    end)
-    |> Enum.reject(fn s -> s == "" end)
-    |> print_paths(offset: 1)
+    print_paths(Paths.list_items_to_print(nil), offset: 1)
   end
 
   defp print_current_directory(directory) do
-    directory
-    |> File.ls!()
-    |> Enum.map(fn item -> Path.join([directory, item]) end)
-    |> (fn paths -> [".." | paths] end).()
-    |> print_paths()
+    print_paths(Paths.list_items_to_print(directory))
   end
 
   defp print_paths(paths, opts \\ []) do
@@ -59,16 +47,7 @@ defmodule CLI do
           nil
 
         {number, _rem} ->
-          paths =
-            Paths.allowed_paths()
-            |> Enum.map(fn type ->
-              try do
-                Paths.get(type)
-              rescue
-                _ -> ""
-              end
-            end)
-            |> Enum.reject(fn s -> s == "" end)
+          paths = Paths.list_items_to_print(nil)
 
           Enum.at(paths, number - 1)
       end
@@ -87,14 +66,13 @@ defmodule CLI do
           Paths.parent_directory(directory)
 
         {number, _rem} ->
-          paths = File.ls!(directory)
-          selection = Enum.at(paths, number - 1)
-          new_dir = Path.join([directory, selection])
+          paths = Paths.list_items_to_print(directory)
+          selection = Enum.at(paths, number)
 
-          if File.dir?(new_dir) do
-            new_dir
+          if File.dir?(selection) do
+            selection
           else
-            Player.play_file(new_dir)
+            Player.play_file(selection)
           end
       end
 

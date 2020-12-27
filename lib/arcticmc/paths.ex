@@ -55,4 +55,26 @@ defmodule Arcticmc.Paths do
     |> Enum.reverse()
     |> Path.join()
   end
+
+  @doc """
+  Lists items to print for a given directory
+  """
+  def list_items_to_print(nil) do
+    allowed_paths()
+    |> Enum.map(fn type ->
+      try do
+        get(type)
+      rescue
+        _ -> ""
+      end
+    end)
+    |> Enum.reject(fn s -> s == "" end)
+  end
+
+  def list_items_to_print(directory) do
+    directory
+    |> File.ls!()
+    |> Enum.map(fn item -> Path.join([directory, item]) end)
+    |> (fn paths -> [".." | paths] end).()
+  end
 end
