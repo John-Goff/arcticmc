@@ -55,6 +55,15 @@ defmodule CLI do
     main_loop(directory)
   end
 
+  defp process_input(directory, "n\n") do
+    next = Enum.find(File.ls!(directory), fn s -> not Player.is_played?(s) end)
+
+    [directory | next]
+    |> Path.join()
+    |> play_or_select()
+    |> main_loop()
+  end
+
   defp process_input(directory, input) do
     directory =
       case Integer.parse(input) do
@@ -67,16 +76,18 @@ defmodule CLI do
 
         {number, _rem} ->
           paths = Paths.list_items_to_print(directory)
-          selection = Enum.at(paths, number)
-
-          if File.dir?(selection) do
-            selection
-          else
-            Player.play_file(selection)
-          end
+          play_or_select(Enum.at(paths, number))
       end
 
     main_loop(directory)
+  end
+
+  defp play_or_select(directory) do
+    if File.dir?(selection) do
+      selection
+    else
+      Player.play_file(selection)
+    end
   end
 end
 
