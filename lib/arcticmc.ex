@@ -19,7 +19,7 @@ defmodule Arcticmc do
     Supervisor.start_link(children, strategy: :one_for_one)
   end
 
-  defp initialize_config() do
+  def initialize_config() do
     get_config_contents()
     |> String.split("\n")
     |> Enum.each(fn line ->
