@@ -58,7 +58,7 @@ defmodule CLI do
   defp process_input(directory, "n\n") do
     next = Enum.find(File.ls!(directory), fn s -> not Player.is_played?(s) end)
 
-    [directory | next]
+    [directory, next]
     |> Path.join()
     |> play_or_select()
     |> main_loop()
@@ -82,7 +82,7 @@ defmodule CLI do
     main_loop(directory)
   end
 
-  defp play_or_select(directory) do
+  defp play_or_select(selection) do
     if File.dir?(selection) do
       selection
     else
