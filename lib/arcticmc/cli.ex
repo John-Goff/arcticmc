@@ -33,10 +33,17 @@ defmodule Arcticmc.CLI do
     |> Enum.each(fn {path, idx} ->
       item = Paths.file_name_without_extension(path)
 
+      colour =
+        cond do
+          Player.is_played?(path) -> IO.ANSI.green()
+          File.dir?(path) -> IO.ANSI.cyan()
+          true -> ""
+        end
+
       IO.puts(
-        "#{if Player.is_played?(path), do: IO.ANSI.green()}#{idx + offset})\t\t#{
-          if File.dir?(path), do: "*"
-        }\t\t#{if Player.is_played?(path), do: "*"}\t#{item}#{IO.ANSI.reset()}"
+        "#{colour}#{idx + offset})\t\t#{if File.dir?(path), do: "*"}\t\t#{
+          if Player.is_played?(path), do: "*"
+        }\t#{item}#{IO.ANSI.reset()}"
       )
     end)
   end
@@ -69,7 +76,7 @@ defmodule Arcticmc.CLI do
     |> main_loop()
   end
 
-  defp process_input(%__MODULE__{directory: directory}, input) do
+  defp process_input(%__MODULE__{directory: directory} = state, input) do
     directory =
       case Integer.parse(input) do
         :error ->
@@ -84,7 +91,7 @@ defmodule Arcticmc.CLI do
           _play_or_select(Enum.at(paths, number))
       end
 
-    main_loop(directory)
+    main_loop(%__MODULE__{state | directory: directory})
   end
 
   defp _play_or_select(selection) do
