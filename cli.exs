@@ -1,2 +1,2 @@
 Arcticmc.Config.initialize_config()
-Arcticmc.CLI.main_loop()
+Ratatouille.run(Arcticmc.CLI)

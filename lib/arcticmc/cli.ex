@@ -1,4 +1,7 @@
 defmodule Arcticmc.CLI do
+  @behaviour Ratatouille.App
+
+  import Ratatouille.View
   alias Arcticmc.Paths
   alias Arcticmc.Player
 
@@ -6,10 +9,25 @@ defmodule Arcticmc.CLI do
 
   defstruct [:directory, :scroll_pos]
 
+  def init(_context), do: %__MODULE__{}
+
+  def update(state, msg) do
+    case msg do
+      _ ->
+        state
+    end
+  end
+
+  def render(state) do
+    top_bar = bar(do: label(content: "Please select a directory or file"))
+    bottom_bar = bar(do: label(content: "q to quit, n to play next unplayed file"))
+    view(top_bar: top_bar, bottom_bar: bottom_bar) do
+
+      #print_current_directory(state.directory)
+    end
+  end
+
   def main_loop(state \\ %__MODULE__{}) do
-    IO.puts("Please select a directory or file")
-    print_current_directory(state.directory)
-    IO.puts("q to quit, n to play next unplayed file")
     process_input(state, IO.gets("> "))
   end
 
