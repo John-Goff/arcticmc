@@ -2,17 +2,30 @@ defmodule Arcticmc.CLI do
   @behaviour Ratatouille.App
 
   import Ratatouille.View
+  import Ratatouille.Constants, only: [key: 1]
   alias Arcticmc.Paths
   alias Arcticmc.Player
+  alias Ratatouille.Window
 
-  @help_text "Could not understand input. Please type a number corresponding to your selection"
+  @up key(:arrow_up)
+  @down key(:arrow_down)
+  @enter key(:enter)
 
-  defstruct [:directory, :scroll_pos]
+  defstruct [:directory, :cursor_pos, :lines, :cols]
 
-  def init(_context), do: %__MODULE__{}
+  def init(_context) do
+    {lines, cols} = _terminal_size()
+    %__MODULE__{cursor_pos: 0, lines: lines, cols: cols}
+  end
 
   def update(state, msg) do
     case msg do
+      {:event, %{key: key}} when key in [@up, @down] ->
+        _move_cursor(state, key)
+
+      {:event, %{key: @enter}} ->
+        _select_entry(state)
+
       _ ->
         state
     end
@@ -21,95 +34,96 @@ defmodule Arcticmc.CLI do
   def render(state) do
     top_bar = bar(do: label(content: "Please select a directory or file"))
     bottom_bar = bar(do: label(content: "q to quit, n to play next unplayed file"))
-    view(top_bar: top_bar, bottom_bar: bottom_bar) do
 
-      #print_current_directory(state.directory)
+    view(top_bar: top_bar, bottom_bar: bottom_bar) do
+      print_current_directory(state.directory, state.cursor_pos)
     end
   end
 
   def main_loop(state \\ %__MODULE__{}) do
-    process_input(state, IO.gets("> "))
+    _process_input(state, IO.gets("> "))
   end
 
-  defp print_current_directory(nil) do
-    IO.puts("Home")
-    print_paths(Paths.list_items_to_print(nil), offset: 1)
+  defp print_current_directory(nil, pos) do
+    row(do: label(contents: "Home"))
+    print_paths(Paths.list_items_to_print(nil), offset: 1, cursor: pos)
   end
 
-  defp print_current_directory(directory) do
-    IO.puts("Current Directory: #{Paths.file_name_without_extension(directory)}")
-    print_paths(Paths.list_items_to_print(directory))
+  defp print_current_directory(directory, pos) do
+    row(do: label(contents: "Current Directory: #{Paths.file_name_without_extension(directory)}"))
+    print_paths(Paths.list_items_to_print(directory), cursor: pos)
   end
 
-  defp print_paths(paths, opts \\ []) do
+  defp print_paths(paths, opts) do
     offset = Keyword.get(opts, :offset, 0)
+    cursor = Keyword.get(opts, :cursor, 0)
 
-    IO.puts("Selection\tDirectory\tPlayed\tItem")
-
-    paths
-    |> Enum.with_index()
-    |> Enum.each(fn {path, idx} ->
-      item = Paths.file_name_without_extension(path)
-
-      colour =
-        cond do
-          Player.is_played?(path) -> IO.ANSI.green()
-          File.dir?(path) -> IO.ANSI.cyan()
-          true -> ""
-        end
-
-      IO.puts(
-        "#{colour}#{idx + offset})\t\t#{if File.dir?(path), do: "*"}\t\t#{
-          if Player.is_played?(path), do: "*"
-        }\t#{item}#{IO.ANSI.reset()}"
-      )
-    end)
-  end
-
-  defp process_input(_state, "q\n"), do: :ok
-
-  defp process_input(%__MODULE__{directory: nil} = state, input) do
-    directory =
-      case Integer.parse(input) do
-        :error ->
-          IO.puts(@help_text)
-          nil
-
-        {number, _rem} ->
-          paths = Paths.list_items_to_print(nil)
-
-          Enum.at(paths, number - 1)
+    header =
+      table_row do
+        table_cell(content: "")
+        table_cell(content: "Selection")
+        table_cell(content: "Directory")
+        table_cell(content: "Played")
+        table_cell(content: "Item")
       end
 
-    main_loop(%__MODULE__{state | directory: directory})
+    table_rows =
+      paths
+      |> Enum.with_index()
+      |> Enum.map(fn {path, idx} ->
+        item = Paths.file_name_without_extension(path)
+
+        colour =
+          cond do
+            Player.is_played?(path) -> :green
+            File.dir?(path) -> :cyan
+            true -> :black
+          end
+
+        table_row do
+          table_cell(content: if(idx == cursor, do: ">", else: ""), attributes: [:bold])
+          table_cell(content: "#{idx + offset})", color: colour)
+          table_cell(content: if(File.dir?(path), do: "*"), color: colour)
+          table_cell(content: if(Player.is_played?(path), do: "*", else: ""), color: colour)
+          table_cell(content: item, color: colour)
+        end
+      end)
+
+    table([header | table_rows])
   end
 
-  defp process_input(%__MODULE__{directory: directory} = state, "n\n") do
+  defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @up) when pos > 0 do
+    %__MODULE__{state | cursor_pos: pos - 1}
+  end
+
+  # When at the top, do not move cursor
+  defp _move_cursor(%__MODULE__{} = state, @up) do
+    state
+  end
+
+  defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @down) do
+    %__MODULE__{state | cursor_pos: pos + 1}
+  end
+
+  defp _process_input(%__MODULE__{directory: directory} = state, ?n) do
     next =
       Enum.find(tl(Paths.list_items_to_print(directory)), fn s -> not Player.is_played?(s) end)
 
     next
     |> _play_or_select()
     |> (fn dir -> %__MODULE__{state | directory: dir} end).()
-    |> main_loop()
   end
 
-  defp process_input(%__MODULE__{directory: directory} = state, input) do
-    directory =
-      case Integer.parse(input) do
-        :error ->
-          IO.puts(@help_text)
-          directory
+  # change mode
+  # defp _select_entry(%__MODULE__{directory: nil, cursor_pos: pos} = state) do
+  #   directory = Enum.at(Paths.list_items_to_print(nil), pos)
+  #   %__MODULE__{state | directory: directory}
+  # end
 
-        {0, _rem} ->
-          Paths.parent_directory(directory)
-
-        {number, _rem} ->
-          paths = Paths.list_items_to_print(directory)
-          _play_or_select(Enum.at(paths, number))
-      end
-
-    main_loop(%__MODULE__{state | directory: directory})
+  # change directory
+  defp _select_entry(%__MODULE__{directory: directory, cursor_pos: pos} = state) do
+    directory = Enum.at(Paths.list_items_to_print(directory), pos)
+    %__MODULE__{state | directory: _play_or_select(directory)}
   end
 
   defp _play_or_select(selection) do
@@ -119,5 +133,11 @@ defmodule Arcticmc.CLI do
       IO.puts("Playing #{selection}")
       Player.play_file(selection)
     end
+  end
+
+  defp _terminal_size do
+    {:ok, lines} = Window.fetch(:height)
+    {:ok, cols} = Window.fetch(:width)
+    {lines, cols}
   end
 end
