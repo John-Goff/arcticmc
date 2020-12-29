@@ -43,34 +43,51 @@ defmodule Arcticmc.CLI do
   end
 
   def update(%__MODULE__{playback_overlay: playback} = state, msg) do
-    case msg do
-      {:event, %{key: key}} when key in [@up, @down] and not playback ->
-        _move_cursor(state, key)
+    cond do
+      playback -> _update_playback(state, msg)
+      true -> _update(state, msg)
+    end
+  end
 
-      {:event, %{key: key}} when key in [@left, @down] and playback ->
+  defp _update_playback(state, msg) do
+    case msg do
+      {:event, %{key: key}} when key in [@left, @down] ->
         playback = Config.get(:playback_speed)
         Config.set(:playback_speed, (trunc(playback * 10) - 1) / 10)
         state
 
-      {:event, %{key: key}} when key in [@right, @up] and playback ->
+      {:event, %{key: key}} when key in [@right, @up] ->
         playback = Config.get(:playback_speed)
         Config.set(:playback_speed, (trunc(playback * 10) + 1) / 10)
         state
 
-      {:event, %{key: @enter}} when not playback ->
+      {:event, %{ch: ch, key: key}} when ch == ?p or key in [@esc, @enter] ->
+        %__MODULE__{state | playback_overlay: false}
+
+      _ ->
+        state
+    end
+  end
+
+  defp _update(state, msg) do
+    case msg do
+      {:event, %{key: key}} when key in [@up, @down] ->
+        _move_cursor(state, key)
+
+      {:event, %{key: @enter}} ->
         _select_entry(state)
 
-      {:event, %{key: @esc}} when not playback ->
+      {:event, %{key: @esc}} ->
         _handle_esc(state)
 
-      {:event, %{ch: num}} when num in ?0..?9 and not playback ->
+      {:event, %{ch: num}} when num in ?0..?9 ->
         %__MODULE__{state | selection: "#{state.selection}#{<<num>>}"}
 
-      {:event, %{ch: ?n}} when not playback ->
+      {:event, %{ch: ?n}} ->
         _next_directory_or_file(state)
 
       {:event, %{ch: ?p}} ->
-        %__MODULE__{state | playback_overlay: !state.playback_overlay}
+        %__MODULE__{state | playback_overlay: true}
 
       _ ->
         state
