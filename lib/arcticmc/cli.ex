@@ -15,6 +15,8 @@ defmodule Arcticmc.CLI do
   @enter key(:enter)
   @esc key(:esc)
   @spacebar key(:space)
+  @home key(:home)
+  @endkey key(:end)
   @delete_keys [
     key(:delete),
     key(:backspace),
@@ -93,6 +95,7 @@ defmodule Arcticmc.CLI do
       {:event, %{key: key}} when key in @delete_keys and rename.cursor != 0 ->
         parts = String.graphemes(rename.name)
         new_parts = Enum.take(parts, rename.cursor - 1) ++ Enum.drop(parts, rename.cursor)
+
         %__MODULE__{
           state
           | rename: %{rename | name: Enum.join(new_parts), cursor: rename.cursor - 1}
@@ -101,14 +104,27 @@ defmodule Arcticmc.CLI do
       {:event, %{key: @spacebar}} ->
         parts = String.graphemes(rename.name)
         new_parts = Enum.take(parts, rename.cursor) ++ [" "] ++ Enum.drop(parts, rename.cursor)
+
         %__MODULE__{
           state
           | rename: %{rename | name: Enum.join(new_parts), cursor: rename.cursor + 1}
         }
 
+      {:event, %{key: @enter}} ->
+        _rename_entry_to(state)
+
+      {:event, %{key: @home}} ->
+        %__MODULE__{state | rename: %{rename | cursor: 0}}
+
+      {:event, %{key: @endkey}} ->
+        %__MODULE__{state | rename: %{rename | cursor: String.length(rename.name)}}
+
       {:event, %{ch: ch}} when ch > 0 ->
         parts = String.graphemes(rename.name)
-        new_parts = Enum.take(parts, rename.cursor) ++ [<<ch::utf8>>] ++ Enum.drop(parts, rename.cursor)
+
+        new_parts =
+          Enum.take(parts, rename.cursor) ++ [<<ch::utf8>>] ++ Enum.drop(parts, rename.cursor)
+
         %__MODULE__{
           state
           | rename: %{rename | name: Enum.join(new_parts), cursor: rename.cursor + 1}
@@ -369,6 +385,21 @@ defmodule Arcticmc.CLI do
     name = List.last(Path.split(directory))
     cursor = String.length(name)
     %__MODULE__{state | rename: %{name: name, cursor: cursor}}
+  end
+
+  defp _rename_entry_to(
+         %__MODULE__{
+           directory: directory,
+           cursor_pos: pos,
+           entries: entries,
+           rename: %{name: name}
+         } = state
+       ) do
+    selected_directory = Enum.at(entries, pos)
+    File.rename!(selected_directory, Path.join(directory, name))
+
+    %__MODULE__{state | rename: nil}
+    |> _new_directory(directory)
   end
 
   defp _terminal_size do
