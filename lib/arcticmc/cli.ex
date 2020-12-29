@@ -90,10 +90,12 @@ defmodule Arcticmc.CLI do
           state
         end
 
-      {:event, %{key: key}} when key in @delete_keys ->
+      {:event, %{key: key}} when key in @delete_keys and rename.cursor != 0 ->
+        parts = String.graphemes(rename.name)
+        new_parts = Enum.take(parts, rename.cursor - 1) ++ Enum.drop(parts, rename.cursor)
         %__MODULE__{
           state
-          | rename: %{rename | name: String.slice(rename.name, 0..-2), cursor: rename.cursor - 1}
+          | rename: %{rename | name: Enum.join(new_parts), cursor: rename.cursor - 1}
         }
 
       {:event, %{key: @spacebar}} ->
