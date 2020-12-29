@@ -131,7 +131,7 @@ defmodule Arcticmc.CLI do
   # change directory
   defp _select_entry(%__MODULE__{directory: directory, cursor_pos: pos} = state) do
     directory = Enum.at(Paths.list_items_to_print(directory), pos)
-    %__MODULE__{state | directory: _play_or_select(directory)}
+    %__MODULE__{state | directory: _play_or_select(directory), cursor_pos: 0}
   end
 
   defp _play_or_select(selection) do
