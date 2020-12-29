@@ -155,6 +155,9 @@ defmodule Arcticmc.CLI do
       {:event, %{ch: ?n}} ->
         _next_directory_or_file(state)
 
+      {:event, %{ch: ?m}} ->
+        _toggle_played(state)
+
       {:event, %{ch: ?p}} ->
         %__MODULE__{state | playback_overlay: true}
 
@@ -175,7 +178,7 @@ defmodule Arcticmc.CLI do
           do:
             label(
               content:
-                "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, ctrl-d to quit"
+                "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, (m)ark played/unplayed, ctrl-d to quit"
             )
         )
       else
@@ -400,6 +403,20 @@ defmodule Arcticmc.CLI do
 
     %__MODULE__{state | rename: nil}
     |> _new_directory(directory)
+  end
+
+  defp _toggle_played(%__MODULE__{directory: base, cursor_pos: pos, entries: entries} = state) do
+    directory = Enum.at(entries, pos)
+
+    if Player.is_played?(directory) do
+      File.rename!(directory, String.replace(directory, Player.played(), ""))
+    else
+      Player.mark_played(directory)
+    end
+
+    entries = Paths.list_items_to_print(base)
+
+    %__MODULE__{state | entries: entries}
   end
 
   defp _terminal_size do
