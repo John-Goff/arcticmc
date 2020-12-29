@@ -11,13 +11,14 @@ defmodule Arcticmc.CLI do
   @down key(:arrow_down)
   @enter key(:enter)
 
-  defstruct [:directory, :cursor_pos, :lines, :cols]
+  defstruct [:directory, :entries, :cursor_pos, :lines, :cols]
 
   def run(opts \\ []), do: Ratatouille.run(__MODULE__, opts)
 
   def init(_context) do
     {lines, cols} = _terminal_size()
-    %__MODULE__{cursor_pos: 0, lines: lines, cols: cols}
+    entries = Paths.list_items_to_print(nil)
+    %__MODULE__{cursor_pos: 0, lines: lines, cols: cols, entries: entries}
   end
 
   def update(state, msg) do
@@ -38,22 +39,18 @@ defmodule Arcticmc.CLI do
     bottom_bar = bar(do: label(content: "q to quit, n to play next unplayed file"))
 
     view(top_bar: top_bar, bottom_bar: bottom_bar) do
-      print_current_directory(state.directory, state.cursor_pos)
+      print_current_directory(state)
     end
   end
 
-  def main_loop(state \\ %__MODULE__{}) do
-    _process_input(state, IO.gets("> "))
-  end
-
-  defp print_current_directory(nil, pos) do
+  defp print_current_directory(%__MODULE__{directory: nil, entries: entries, cursor_pos: pos}) do
     row(do: label(contents: "Home"))
-    print_paths(Paths.list_items_to_print(nil), offset: 1, cursor: pos)
+    print_paths(entries, offset: 1, cursor: pos)
   end
 
-  defp print_current_directory(directory, pos) do
+  defp print_current_directory(%__MODULE__{directory: directory, entries: entries, cursor_pos: pos}) do
     row(do: label(contents: "Current Directory: #{Paths.file_name_without_extension(directory)}"))
-    print_paths(Paths.list_items_to_print(directory), cursor: pos)
+    print_paths(entries, cursor: pos)
   end
 
   defp print_paths(paths, opts) do
@@ -131,14 +128,15 @@ defmodule Arcticmc.CLI do
   # change directory
   defp _select_entry(%__MODULE__{directory: directory, cursor_pos: pos} = state) do
     directory = Enum.at(Paths.list_items_to_print(directory), pos)
-    %__MODULE__{state | directory: _play_or_select(directory), cursor_pos: 0}
+    new_directory = _play_or_select(directory)
+    entries = Paths.list_items_to_print(new_directory)
+    %__MODULE__{state | directory: new_directory, entries: entries, cursor_pos: 0}
   end
 
   defp _play_or_select(selection) do
     if File.dir?(selection) do
       selection
     else
-      IO.puts("Playing #{selection}")
       Player.play_file(selection)
     end
   end
