@@ -33,7 +33,8 @@ defmodule Arcticmc.CLI do
     :rename
   ]
 
-  def run(opts \\ []), do: Ratatouille.run(__MODULE__, [{:quit_events, [key: key(:ctrl_d)]} | opts])
+  def run(opts \\ []),
+    do: Ratatouille.run(__MODULE__, [{:quit_events, [key: key(:ctrl_d)]} | opts])
 
   def init(_context) do
     {lines, cols} = _terminal_size()
@@ -79,14 +80,33 @@ defmodule Arcticmc.CLI do
 
   defp _update_rename(%__MODULE__{rename: rename} = state, msg) do
     case msg do
+      {:event, %{key: @left}} when rename.cursor > 0 ->
+        %__MODULE__{state | rename: %{rename | cursor: rename.cursor - 1}}
+
+      {:event, %{key: @right}} ->
+        if String.length(rename.name) > rename.cursor do
+          %__MODULE__{state | rename: %{rename | cursor: rename.cursor + 1}}
+        else
+          state
+        end
+
       {:event, %{key: key}} when key in @delete_keys ->
-        %__MODULE__{state | rename: %{rename | name: String.slice(rename.name, 0..-2)}}
+        %__MODULE__{
+          state
+          | rename: %{rename | name: String.slice(rename.name, 0..-2), cursor: rename.cursor - 1}
+        }
 
       {:event, %{key: @spacebar}} ->
-        %__MODULE__{state | rename: %{rename | name: rename.name <> " "}}
+        %__MODULE__{
+          state
+          | rename: %{rename | name: rename.name <> " ", cursor: rename.cursor + 1}
+        }
 
       {:event, %{ch: ch}} when ch > 0 ->
-        %__MODULE__{state | rename: %{rename | name: rename.name <> <<ch::utf8>>}}
+        %__MODULE__{
+          state
+          | rename: %{rename | name: rename.name <> <<ch::utf8>>, cursor: rename.cursor + 1}
+        }
 
       {:event, %{key: @esc}} ->
         %__MODULE__{state | rename: nil}
@@ -152,9 +172,18 @@ defmodule Arcticmc.CLI do
       end
 
       if not is_nil(state.rename) do
+        parts = state.rename.name |> String.graphemes()
+
+        name =
+          parts
+          |> Enum.take(state.rename.cursor)
+          |> Kernel.++(["▌"])
+          |> Kernel.++(Enum.drop(parts, state.rename.cursor))
+          |> Enum.join()
+
         overlay(padding: 15) do
           panel(title: "Rename File or Directory", height: :fill) do
-            label(content: state.rename <> "▌")
+            label(content: name)
           end
         end
       end
@@ -332,7 +361,8 @@ defmodule Arcticmc.CLI do
   defp _rename_entry(%__MODULE__{cursor_pos: pos, entries: entries} = state) do
     directory = Enum.at(entries, pos)
     name = List.last(Path.split(directory))
-    %__MODULE__{state | rename: %{name: name}}
+    cursor = String.length(name)
+    %__MODULE__{state | rename: %{name: name, cursor: cursor}}
   end
 
   defp _terminal_size do
