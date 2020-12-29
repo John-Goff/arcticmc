@@ -77,6 +77,7 @@ defmodule Arcticmc.CLI do
 
     table_rows =
       paths
+      |> Enum.sort()
       |> Enum.with_index()
       |> Enum.drop(scroll)
       |> Enum.map(fn {path, idx} ->
@@ -168,6 +169,8 @@ defmodule Arcticmc.CLI do
   defp _play_or_select("..", base) do
     Paths.parent_directory(base)
   end
+
+  defp _play_or_select(nil, _base), do: nil
 
   defp _play_or_select(selection, _base) do
     if File.dir?(selection) do
