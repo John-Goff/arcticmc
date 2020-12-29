@@ -11,14 +11,14 @@ defmodule Arcticmc.CLI do
   @down key(:arrow_down)
   @enter key(:enter)
 
-  defstruct [:directory, :entries, :cursor_pos, :lines, :cols]
+  defstruct [:directory, :entries, :cursor_pos, :lines, :cols, :scroll_pos]
 
   def run(opts \\ []), do: Ratatouille.run(__MODULE__, opts)
 
   def init(_context) do
     {lines, cols} = _terminal_size()
     entries = Paths.list_items_to_print(nil)
-    %__MODULE__{cursor_pos: 0, lines: lines, cols: cols, entries: entries}
+    %__MODULE__{cursor_pos: 0, scroll_pos: 0, lines: lines, cols: cols, entries: entries}
   end
 
   def update(state, msg) do
@@ -44,18 +44,25 @@ defmodule Arcticmc.CLI do
   end
 
   defp print_current_directory(%__MODULE__{directory: nil, entries: entries, cursor_pos: pos}) do
-    row(do: label(contents: "Home"))
-    print_paths(entries, offset: 1, cursor: pos)
+    [label(content: "Home"), print_paths(entries, offset: 1, cursor: pos)]
   end
 
-  defp print_current_directory(%__MODULE__{directory: directory, entries: entries, cursor_pos: pos}) do
-    row(do: label(contents: "Current Directory: #{Paths.file_name_without_extension(directory)}"))
-    print_paths(entries, cursor: pos)
+  defp print_current_directory(%__MODULE__{
+         directory: directory,
+         entries: entries,
+         scroll_pos: scroll,
+         cursor_pos: pos
+       }) do
+    [
+      label(content: "Current Directory: #{Paths.file_name_without_extension(directory)}"),
+      print_paths(entries, cursor: pos, scroll: scroll)
+    ]
   end
 
   defp print_paths(paths, opts) do
     offset = Keyword.get(opts, :offset, 0)
     cursor = Keyword.get(opts, :cursor, 0)
+    scroll = Keyword.get(opts, :scroll, 0)
 
     header =
       table_row do
@@ -68,6 +75,7 @@ defmodule Arcticmc.CLI do
     table_rows =
       paths
       |> Enum.with_index()
+      |> Enum.drop(scroll)
       |> Enum.map(fn {path, idx} ->
         item = Paths.file_name_without_extension(path)
 
@@ -79,6 +87,7 @@ defmodule Arcticmc.CLI do
           end
 
         opts = [color: colour]
+
         opts =
           if idx == cursor do
             [{:background, :yellow}, {:attributes, [:bold]} | opts]
@@ -98,7 +107,14 @@ defmodule Arcticmc.CLI do
   end
 
   defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @up) when pos > 0 do
-    %__MODULE__{state | cursor_pos: pos - 1}
+    scroll =
+      if state.scroll_pos == pos do
+        state.scroll_pos - 1
+      else
+        state.scroll_pos
+      end
+
+    %__MODULE__{state | cursor_pos: pos - 1, scroll_pos: scroll}
   end
 
   # When at the top, do not move cursor
@@ -106,8 +122,15 @@ defmodule Arcticmc.CLI do
     state
   end
 
-  defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @down) do
-    %__MODULE__{state | cursor_pos: pos + 1}
+  defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
+       when pos < length(entries) - 1 do
+    scroll =
+      if pos >= (state.lines - 5) + state.scroll_pos do
+        state.scroll_pos + 1
+      else
+        state.scroll_pos
+      end
+    %__MODULE__{state | cursor_pos: pos + 1, scroll_pos: scroll}
   end
 
   defp _process_input(%__MODULE__{directory: directory} = state, ?n) do
@@ -126,14 +149,20 @@ defmodule Arcticmc.CLI do
   # end
 
   # change directory
-  defp _select_entry(%__MODULE__{directory: directory, cursor_pos: pos} = state) do
-    directory = Enum.at(Paths.list_items_to_print(directory), pos)
-    new_directory = _play_or_select(directory)
-    entries = Paths.list_items_to_print(new_directory)
-    %__MODULE__{state | directory: new_directory, entries: entries, cursor_pos: 0}
+  defp _select_entry(%__MODULE__{directory: base, entries: entries, cursor_pos: pos} = state) do
+    directory = Enum.at(entries, pos)
+    directory = _play_or_select(directory, base)
+    entries = Paths.list_items_to_print(directory)
+    %__MODULE__{state | directory: directory, entries: entries, cursor_pos: 0, scroll_pos: 0}
   end
 
-  defp _play_or_select(selection) do
+  defp _play_or_select(selection, base \\ "")
+
+  defp _play_or_select("..", base) do
+    Paths.parent_directory(base)
+  end
+
+  defp _play_or_select(selection, _base) do
     if File.dir?(selection) do
       selection
     else
