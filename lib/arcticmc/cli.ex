@@ -14,7 +14,16 @@ defmodule Arcticmc.CLI do
   @right key(:arrow_right)
   @enter key(:enter)
 
-  defstruct [:directory, :entries, :cursor_pos, :lines, :cols, :scroll_pos, :playback_overlay]
+  defstruct [
+    :directory,
+    :entries,
+    :cursor_pos,
+    :lines,
+    :cols,
+    :scroll_pos,
+    :playback_overlay,
+    :selection
+  ]
 
   def run(opts \\ []), do: Ratatouille.run(__MODULE__, opts)
 
@@ -50,6 +59,9 @@ defmodule Arcticmc.CLI do
       {:event, %{key: @enter}} when not playback ->
         _select_entry(state)
 
+      {:event, %{ch: num}} when num in ?0..?9 and not playback ->
+        %__MODULE__{state | selection: "#{state.selection}#{<<num>>}"}
+
       {:event, %{ch: ?n}} when not playback ->
         _next_directory_or_file(state)
 
@@ -63,7 +75,18 @@ defmodule Arcticmc.CLI do
 
   def render(state) do
     top_bar = bar(do: label(content: "Please select a directory or file"))
-    bottom_bar = bar(do: label(content: "(q)uit, (n)ext file, (p)layback speed: #{Config.get(:playback_speed)}"))
+
+    bottom_bar =
+      if is_nil(state.selection) do
+        bar(
+          do:
+            label(
+              content: "(q)uit, (n)ext file, (p)layback speed: #{Config.get(:playback_speed)}"
+            )
+        )
+      else
+        bar(do: label(content: "> #{state.selection}"))
+      end
 
     view(top_bar: top_bar, bottom_bar: bottom_bar) do
       _print_current_directory(state)
@@ -71,7 +94,7 @@ defmodule Arcticmc.CLI do
       if state.playback_overlay do
         overlay(padding: 15) do
           panel(title: "Change playback speed", height: :fill) do
-            label(content: to_string(Config.get(:playback_speed)))
+            label(content: "Current speed: #{Config.get(:playback_speed)}")
           end
         end
       end
@@ -188,12 +211,30 @@ defmodule Arcticmc.CLI do
   #   %__MODULE__{state | directory: directory}
   # end
 
-  # change directory
-  defp _select_entry(%__MODULE__{directory: base, entries: entries, cursor_pos: pos} = state) do
+  # Select item directly
+  defp _select_entry(%__MODULE__{selection: select} = state) when is_binary(select) do
+    {select, _rem} = Integer.parse(select)
+    _select_entry_at(state, select)
+  end
+
+  # Select item under cursor
+  defp _select_entry(%__MODULE__{cursor_pos: pos} = state) do
+    _select_entry_at(state, pos)
+  end
+
+  defp _select_entry_at(%__MODULE__{directory: base, entries: entries} = state, pos) do
     directory = Enum.at(entries, pos)
     directory = _play_or_select(directory, base)
     entries = Paths.list_items_to_print(directory)
-    %__MODULE__{state | directory: directory, entries: entries, cursor_pos: 0, scroll_pos: 0}
+
+    %__MODULE__{
+      state
+      | directory: directory,
+        entries: entries,
+        cursor_pos: 0,
+        scroll_pos: 0,
+        selection: nil
+    }
   end
 
   defp _play_or_select(selection, base \\ "")
