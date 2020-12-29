@@ -3,34 +3,58 @@ defmodule Arcticmc.CLI do
 
   import Ratatouille.View
   import Ratatouille.Constants, only: [key: 1]
+  alias Arcticmc.Config
   alias Arcticmc.Paths
   alias Arcticmc.Player
   alias Ratatouille.Window
 
   @up key(:arrow_up)
   @down key(:arrow_down)
+  @left key(:arrow_left)
+  @right key(:arrow_right)
   @enter key(:enter)
 
-  defstruct [:directory, :entries, :cursor_pos, :lines, :cols, :scroll_pos]
+  defstruct [:directory, :entries, :cursor_pos, :lines, :cols, :scroll_pos, :playback_overlay]
 
   def run(opts \\ []), do: Ratatouille.run(__MODULE__, opts)
 
   def init(_context) do
     {lines, cols} = _terminal_size()
     entries = Paths.list_items_to_print(nil)
-    %__MODULE__{cursor_pos: 0, scroll_pos: 0, lines: lines, cols: cols, entries: entries}
+
+    %__MODULE__{
+      cursor_pos: 0,
+      scroll_pos: 0,
+      playback_overlay: false,
+      lines: lines,
+      cols: cols,
+      entries: entries
+    }
   end
 
-  def update(state, msg) do
+  def update(%__MODULE__{playback_overlay: playback} = state, msg) do
     case msg do
-      {:event, %{key: key}} when key in [@up, @down] ->
+      {:event, %{key: key}} when key in [@up, @down] and not playback ->
         _move_cursor(state, key)
 
-      {:event, %{key: @enter}} ->
+      {:event, %{key: key}} when key in [@left, @down] and playback ->
+        playback = Config.get(:playback_speed)
+        Config.set(:playback_speed, (trunc(playback * 10) - 1) / 10)
+        state
+
+      {:event, %{key: key}} when key in [@right, @up] and playback ->
+        playback = Config.get(:playback_speed)
+        Config.set(:playback_speed, (trunc(playback * 10) + 1) / 10)
+        state
+
+      {:event, %{key: @enter}} when not playback ->
         _select_entry(state)
 
-      {:event, %{ch: ?n}} ->
+      {:event, %{ch: ?n}} when not playback ->
         _next_directory_or_file(state)
+
+      {:event, %{ch: ?p}} ->
+        %__MODULE__{state | playback_overlay: !state.playback_overlay}
 
       _ ->
         state
@@ -39,18 +63,26 @@ defmodule Arcticmc.CLI do
 
   def render(state) do
     top_bar = bar(do: label(content: "Please select a directory or file"))
-    bottom_bar = bar(do: label(content: "q to quit, n to play next unplayed file"))
+    bottom_bar = bar(do: label(content: "(q)uit, (n)ext file, (p)layback speed: #{Config.get(:playback_speed)}"))
 
     view(top_bar: top_bar, bottom_bar: bottom_bar) do
-      print_current_directory(state)
+      _print_current_directory(state)
+
+      if state.playback_overlay do
+        overlay(padding: 15) do
+          panel(title: "Change playback speed", height: :fill) do
+            label(content: to_string(Config.get(:playback_speed)))
+          end
+        end
+      end
     end
   end
 
-  defp print_current_directory(%__MODULE__{directory: nil, entries: entries, cursor_pos: pos}) do
-    [label(content: "Home"), print_paths(entries, offset: 1, cursor: pos)]
+  defp _print_current_directory(%__MODULE__{directory: nil, entries: entries, cursor_pos: pos}) do
+    [label(content: "Home"), _print_paths(entries, offset: 1, cursor: pos)]
   end
 
-  defp print_current_directory(%__MODULE__{
+  defp _print_current_directory(%__MODULE__{
          directory: directory,
          entries: entries,
          scroll_pos: scroll,
@@ -58,11 +90,11 @@ defmodule Arcticmc.CLI do
        }) do
     [
       label(content: "Current Directory: #{Paths.file_name_without_extension(directory)}"),
-      print_paths(entries, cursor: pos, scroll: scroll)
+      _print_paths(entries, cursor: pos, scroll: scroll)
     ]
   end
 
-  defp print_paths(paths, opts) do
+  defp _print_paths(paths, opts) do
     offset = Keyword.get(opts, :offset, 0)
     cursor = Keyword.get(opts, :cursor, 0)
     scroll = Keyword.get(opts, :scroll, 0)
@@ -128,11 +160,12 @@ defmodule Arcticmc.CLI do
   defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
        when pos < length(entries) - 1 do
     scroll =
-      if pos >= (state.lines - 5) + state.scroll_pos do
+      if pos >= state.lines - 5 + state.scroll_pos do
         state.scroll_pos + 1
       else
         state.scroll_pos
       end
+
     %__MODULE__{state | cursor_pos: pos + 1, scroll_pos: scroll}
   end
 
