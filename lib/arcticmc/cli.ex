@@ -14,6 +14,12 @@ defmodule Arcticmc.CLI do
   @right key(:arrow_right)
   @enter key(:enter)
   @esc key(:esc)
+  @spacebar key(:space)
+  @delete_keys [
+    key(:delete),
+    key(:backspace),
+    key(:backspace2)
+  ]
 
   defstruct [
     :directory,
@@ -23,10 +29,11 @@ defmodule Arcticmc.CLI do
     :cols,
     :scroll_pos,
     :playback_overlay,
-    :selection
+    :selection,
+    :rename
   ]
 
-  def run(opts \\ []), do: Ratatouille.run(__MODULE__, opts)
+  def run(opts \\ []), do: Ratatouille.run(__MODULE__, [{:quit_events, [key: key(:ctrl_d)]} | opts])
 
   def init(_context) do
     {lines, cols} = _terminal_size()
@@ -42,9 +49,10 @@ defmodule Arcticmc.CLI do
     }
   end
 
-  def update(%__MODULE__{playback_overlay: playback} = state, msg) do
+  def update(%__MODULE__{playback_overlay: playback, rename: rename} = state, msg) do
     cond do
       playback -> _update_playback(state, msg)
+      not is_nil(rename) -> _update_rename(state, msg)
       true -> _update(state, msg)
     end
   end
@@ -63,6 +71,25 @@ defmodule Arcticmc.CLI do
 
       {:event, %{ch: ch, key: key}} when ch == ?p or key in [@esc, @enter] ->
         %__MODULE__{state | playback_overlay: false}
+
+      _ ->
+        state
+    end
+  end
+
+  defp _update_rename(%__MODULE__{rename: rename} = state, msg) do
+    case msg do
+      {:event, %{key: key}} when key in @delete_keys ->
+        %__MODULE__{state | rename: %{rename | name: String.slice(rename.name, 0..-2)}}
+
+      {:event, %{key: @spacebar}} ->
+        %__MODULE__{state | rename: %{rename | name: rename.name <> " "}}
+
+      {:event, %{ch: ch}} when ch > 0 ->
+        %__MODULE__{state | rename: %{rename | name: rename.name <> <<ch::utf8>>}}
+
+      {:event, %{key: @esc}} ->
+        %__MODULE__{state | rename: nil}
 
       _ ->
         state
@@ -89,6 +116,9 @@ defmodule Arcticmc.CLI do
       {:event, %{ch: ?p}} ->
         %__MODULE__{state | playback_overlay: true}
 
+      {:event, %{ch: ?r}} ->
+        _rename_entry(state)
+
       _ ->
         state
     end
@@ -102,7 +132,8 @@ defmodule Arcticmc.CLI do
         bar(
           do:
             label(
-              content: "(q)uit, (n)ext file, (p)layback speed: #{Config.get(:playback_speed)}"
+              content:
+                "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, ctrl-d to quit"
             )
         )
       else
@@ -116,6 +147,14 @@ defmodule Arcticmc.CLI do
         overlay(padding: 15) do
           panel(title: "Change playback speed", height: :fill) do
             label(content: "Current speed: #{Config.get(:playback_speed)}")
+          end
+        end
+      end
+
+      if not is_nil(state.rename) do
+        overlay(padding: 15) do
+          panel(title: "Rename File or Directory", height: :fill) do
+            label(content: state.rename <> "▌")
           end
         end
       end
@@ -288,6 +327,12 @@ defmodule Arcticmc.CLI do
   defp _handle_esc(%__MODULE__{directory: base} = state) do
     directory = _play_or_select("..", base)
     _new_directory(state, directory)
+  end
+
+  defp _rename_entry(%__MODULE__{cursor_pos: pos, entries: entries} = state) do
+    directory = Enum.at(entries, pos)
+    name = List.last(Path.split(directory))
+    %__MODULE__{state | rename: %{name: name}}
   end
 
   defp _terminal_size do
