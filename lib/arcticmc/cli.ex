@@ -77,7 +77,6 @@ defmodule Arcticmc.CLI do
 
     table_rows =
       paths
-      |> Enum.sort()
       |> Enum.with_index()
       |> Enum.drop(scroll)
       |> Enum.map(fn {path, idx} ->

@@ -69,6 +69,7 @@ defmodule Arcticmc.Paths do
       end
     end)
     |> Enum.reject(fn s -> s == "" end)
+    |> Enum.sort()
   end
 
   def list_items_to_print(directory) do
@@ -79,6 +80,7 @@ defmodule Arcticmc.Paths do
       _str -> false
     end)
     |> Enum.map(fn item -> Path.join([directory, item]) end)
+    |> Enum.sort()
     |> (fn paths -> [".." | paths] end).()
   end
 end
