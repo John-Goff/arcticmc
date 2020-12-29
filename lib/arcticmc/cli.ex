@@ -99,15 +99,19 @@ defmodule Arcticmc.CLI do
         }
 
       {:event, %{key: @spacebar}} ->
+        parts = String.graphemes(rename.name)
+        new_parts = Enum.take(parts, rename.cursor) ++ [" "] ++ Enum.drop(parts, rename.cursor)
         %__MODULE__{
           state
-          | rename: %{rename | name: rename.name <> " ", cursor: rename.cursor + 1}
+          | rename: %{rename | name: Enum.join(new_parts), cursor: rename.cursor + 1}
         }
 
       {:event, %{ch: ch}} when ch > 0 ->
+        parts = String.graphemes(rename.name)
+        new_parts = Enum.take(parts, rename.cursor) ++ [<<ch::utf8>>] ++ Enum.drop(parts, rename.cursor)
         %__MODULE__{
           state
-          | rename: %{rename | name: rename.name <> <<ch::utf8>>, cursor: rename.cursor + 1}
+          | rename: %{rename | name: Enum.join(new_parts), cursor: rename.cursor + 1}
         }
 
       {:event, %{key: @esc}} ->
