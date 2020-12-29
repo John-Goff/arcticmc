@@ -13,6 +13,8 @@ defmodule Arcticmc.CLI do
 
   defstruct [:directory, :cursor_pos, :lines, :cols]
 
+  def run(opts \\ []), do: Ratatouille.run(__MODULE__, opts)
+
   def init(_context) do
     {lines, cols} = _terminal_size()
     %__MODULE__{cursor_pos: 0, lines: lines, cols: cols}
