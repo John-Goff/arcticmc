@@ -240,7 +240,12 @@ defmodule Arcticmc.CLI do
   defp _play_or_select(selection, base \\ "")
 
   defp _play_or_select("..", base) do
-    Paths.parent_directory(base)
+    # Return to home directory if at top level
+    if base in Paths.list_items_to_print(nil) do
+      nil
+    else
+      Paths.parent_directory(base)
+    end
   end
 
   defp _play_or_select(nil, _base), do: nil
