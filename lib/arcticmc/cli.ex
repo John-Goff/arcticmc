@@ -62,7 +62,6 @@ defmodule Arcticmc.CLI do
 
     header =
       table_row do
-        table_cell(content: "")
         table_cell(content: "Selection")
         table_cell(content: "Directory")
         table_cell(content: "Played")
@@ -78,16 +77,23 @@ defmodule Arcticmc.CLI do
         colour =
           cond do
             Player.is_played?(path) -> :green
-            File.dir?(path) -> :cyan
+            File.dir?(path) -> if(idx == cursor, do: :blue, else: :cyan)
             true -> :black
           end
 
+        opts = [color: colour]
+        opts =
+          if idx == cursor do
+            [{:background, :yellow}, {:attributes, [:bold]} | opts]
+          else
+            opts
+          end
+
         table_row do
-          table_cell(content: if(idx == cursor, do: ">", else: ""), attributes: [:bold])
-          table_cell(content: "#{idx + offset})", color: colour)
-          table_cell(content: if(File.dir?(path), do: "*"), color: colour)
-          table_cell(content: if(Player.is_played?(path), do: "*", else: ""), color: colour)
-          table_cell(content: item, color: colour)
+          table_cell([{:content, "#{idx + offset})"} | opts])
+          table_cell([{:content, if(File.dir?(path), do: "*")} | opts])
+          table_cell([{:content, if(Player.is_played?(path), do: "*", else: "")} | opts])
+          table_cell([{:content, item} | opts])
         end
       end)
 
