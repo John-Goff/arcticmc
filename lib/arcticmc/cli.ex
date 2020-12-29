@@ -13,6 +13,7 @@ defmodule Arcticmc.CLI do
   @left key(:arrow_left)
   @right key(:arrow_right)
   @enter key(:enter)
+  @esc key(:esc)
 
   defstruct [
     :directory,
@@ -58,6 +59,9 @@ defmodule Arcticmc.CLI do
 
       {:event, %{key: @enter}} when not playback ->
         _select_entry(state)
+
+      {:event, %{key: @esc}} when not playback ->
+        _handle_esc(state)
 
       {:event, %{ch: num}} when num in ?0..?9 and not playback ->
         %__MODULE__{state | selection: "#{state.selection}#{<<num>>}"}
@@ -225,6 +229,10 @@ defmodule Arcticmc.CLI do
   defp _select_entry_at(%__MODULE__{directory: base, entries: entries} = state, pos) do
     directory = Enum.at(entries, pos)
     directory = _play_or_select(directory, base)
+    _new_directory(state, directory)
+  end
+
+  defp _new_directory(state, directory) do
     entries = Paths.list_items_to_print(directory)
 
     %__MODULE__{
@@ -256,6 +264,11 @@ defmodule Arcticmc.CLI do
     else
       Player.play_file(selection)
     end
+  end
+
+  defp _handle_esc(%__MODULE__{directory: base} = state) do
+    directory = _play_or_select("..", base)
+    _new_directory(state, directory)
   end
 
   defp _terminal_size do
