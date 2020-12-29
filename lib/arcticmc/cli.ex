@@ -29,6 +29,9 @@ defmodule Arcticmc.CLI do
       {:event, %{key: @enter}} ->
         _select_entry(state)
 
+      {:event, %{ch: ?n}} ->
+        _next_directory_or_file(state)
+
       _ ->
         state
     end
@@ -133,13 +136,17 @@ defmodule Arcticmc.CLI do
     %__MODULE__{state | cursor_pos: pos + 1, scroll_pos: scroll}
   end
 
-  defp _process_input(%__MODULE__{directory: directory} = state, ?n) do
-    next =
-      Enum.find(tl(Paths.list_items_to_print(directory)), fn s -> not Player.is_played?(s) end)
+  # When at the bottom, do not move cursor
+  defp _move_cursor(%__MODULE__{} = state, @down) do
+    state
+  end
+
+  defp _next_directory_or_file(%__MODULE__{entries: entries} = state) do
+    next = Enum.find(tl(entries), fn s -> not Player.is_played?(s) end)
 
     next
     |> _play_or_select()
-    |> (fn dir -> %__MODULE__{state | directory: dir} end).()
+    |> (fn dir -> %__MODULE__{state | directory: dir, entries: Paths.list_items_to_print(dir)} end).()
   end
 
   # change mode
