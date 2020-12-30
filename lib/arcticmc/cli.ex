@@ -141,7 +141,7 @@ defmodule Arcticmc.CLI do
     end
   end
 
-  defp _update(state, msg) do
+  defp _update(%__MODULE__{} = state, msg) do
     case msg do
       {:event, %{key: key}} when key in [@up, @down] ->
         _move_cursor(state, key)
@@ -151,6 +151,10 @@ defmodule Arcticmc.CLI do
 
       {:event, %{key: @esc}} ->
         _handle_esc(state)
+
+      {:event, %{key: key}}
+      when key in @delete_keys and is_binary(state.selection) and state.selection != "" ->
+        _delete_selection(state)
 
       {:event, %{ch: num}} when num in ?0..?9 ->
         _enter_selection(state, num)
@@ -424,6 +428,21 @@ defmodule Arcticmc.CLI do
 
   defp _enter_selection(state, num) do
     new_sel = "#{state.selection}#{<<num>>}"
+    _change_selection(state, new_sel)
+  end
+
+  defp _delete_selection(%__MODULE__{selection: selection} = state) do
+    if String.length(selection) == 1 do
+      %__MODULE__{state | selection: nil}
+    else
+      new_sel =
+        selection |> String.graphemes() |> Enum.reverse() |> tl() |> Enum.reverse() |> Enum.join()
+
+      _change_selection(state, new_sel)
+    end
+  end
+
+  defp _change_selection(state, new_sel) do
     pos = String.to_integer(new_sel)
 
     scroll =
