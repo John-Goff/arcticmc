@@ -35,7 +35,8 @@ defmodule Arcticmc.CLI do
     :scroll_pos,
     :playback_overlay,
     :selection,
-    :rename
+    :rename,
+    :currently_playing
   ]
 
   def run(opts \\ []),
@@ -185,7 +186,7 @@ defmodule Arcticmc.CLI do
           do:
             label(
               content:
-                "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, (m)ark played/unplayed, ctrl-d to quit"
+                "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, (m)ark played/unplayed, (r)ename, ctrl-d to quit"
             )
         )
       else
@@ -319,11 +320,11 @@ defmodule Arcticmc.CLI do
   end
 
   defp _next_directory_or_file(%__MODULE__{entries: entries} = state) do
-    next = Enum.find(tl(entries), fn s -> not Player.is_played?(s) end)
-
-    next
+    entries
+    |> tl()
+    |> Enum.find(fn s -> not Player.is_played?(s) end)
     |> _play_or_select()
-    |> (fn dir -> %__MODULE__{state | directory: dir, entries: Paths.list_items_to_print(dir)} end).()
+    |> (fn dir -> _new_directory(state, dir) end).()
   end
 
   # change mode
