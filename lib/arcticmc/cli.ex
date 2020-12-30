@@ -23,6 +23,9 @@ defmodule Arcticmc.CLI do
     key(:backspace2)
   ]
 
+  # How many lines are taken up by UI elements
+  @reserved_lines 5
+
   defstruct [
     :directory,
     :entries,
@@ -150,7 +153,7 @@ defmodule Arcticmc.CLI do
         _handle_esc(state)
 
       {:event, %{ch: num}} when num in ?0..?9 ->
-        %__MODULE__{state | selection: "#{state.selection}#{<<num>>}"}
+        _enter_selection(state, num)
 
       {:event, %{ch: ?n}} ->
         _next_directory_or_file(state)
@@ -297,7 +300,7 @@ defmodule Arcticmc.CLI do
   defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
        when pos < length(entries) - 1 do
     scroll =
-      if pos >= state.lines - 5 + state.scroll_pos do
+      if pos >= state.lines - @reserved_lines + state.scroll_pos do
         state.scroll_pos + 1
       else
         state.scroll_pos
@@ -417,6 +420,25 @@ defmodule Arcticmc.CLI do
     entries = Paths.list_items_to_print(base)
 
     %__MODULE__{state | entries: entries}
+  end
+
+  defp _enter_selection(state, num) do
+    new_sel = "#{state.selection}#{<<num>>}"
+    pos = String.to_integer(new_sel)
+
+    scroll =
+      cond do
+        state.scroll_pos > pos ->
+          pos
+
+        pos > state.scroll_pos + state.lines - @reserved_lines ->
+          pos - state.lines + @reserved_lines
+
+        true ->
+          state.scroll_pos
+      end
+
+    %__MODULE__{state | selection: new_sel, cursor_pos: pos, scroll_pos: scroll}
   end
 
   defp _terminal_size do
