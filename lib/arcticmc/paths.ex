@@ -56,6 +56,8 @@ defmodule Arcticmc.Paths do
     |> Path.join()
   end
 
+  @video_extensions ["avi", "mp4", "mkv"]
+
   @doc """
   Lists items to print for a given directory
   """
@@ -76,8 +78,20 @@ defmodule Arcticmc.Paths do
     directory
     |> File.ls!()
     |> Enum.reject(fn
-      "." <> _str -> true
-      _str -> false
+      "." <> _str ->
+        true
+
+      str ->
+        if File.dir?(Path.join([directory, str])),
+          do: false,
+          else:
+            str
+            |> String.reverse()
+            |> String.split(".", parts: 2)
+            |> List.first()
+            |> String.reverse()
+            |> Kernel.in(@video_extensions)
+            |> Kernel.not()
     end)
     |> Enum.map(fn item -> Path.join([directory, item]) end)
     |> Enum.sort()

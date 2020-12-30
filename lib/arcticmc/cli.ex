@@ -254,7 +254,7 @@ defmodule Arcticmc.CLI do
         colour =
           cond do
             Player.is_played?(path) -> :green
-            File.dir?(path) -> if(idx == cursor, do: :blue, else: :cyan)
+            File.dir?(path) -> :blue
             true -> :black
           end
 
