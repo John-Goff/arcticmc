@@ -6,6 +6,7 @@ defmodule Arcticmc.CLI do
   alias Arcticmc.Config
   alias Arcticmc.Paths
   alias Arcticmc.Player
+  alias Ratatouille.Runtime.Command
   alias Ratatouille.Window
 
   @up key(:arrow_up)
@@ -172,26 +173,31 @@ defmodule Arcticmc.CLI do
       {:event, %{ch: ?r}} ->
         _rename_entry(state)
 
+      {:currently_playing, directory} ->
+        %__MODULE__{state | currently_playing: nil}
+        |> _new_directory(directory, reset_cursor: false)
+
       _ ->
         state
     end
   end
 
-  def render(state) do
+  def render(%__MODULE__{} = state) do
     top_bar = bar(do: label(content: "Please select a directory or file"))
 
-    bottom_bar =
-      if is_nil(state.selection) do
-        bar(
-          do:
-            label(
-              content:
-                "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, (m)ark played/unplayed, (r)ename, ctrl-d to quit"
-            )
-        )
-      else
-        bar(do: label(content: "> #{state.selection}"))
+    bbcontent =
+      cond do
+        not is_nil(state.selection) ->
+          "> #{state.selection}"
+
+        not is_nil(state.currently_playing) ->
+          "Now Playing: #{Paths.file_name_without_extension(state.currently_playing)}"
+
+        true ->
+          "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, (m)ark played/unplayed, (r)ename, ctrl-d to quit"
       end
+
+    bottom_bar = bar(do: label(content: bbcontent))
 
     view(top_bar: top_bar, bottom_bar: bottom_bar) do
       _print_current_directory(state)
@@ -323,8 +329,7 @@ defmodule Arcticmc.CLI do
     entries
     |> tl()
     |> Enum.find(fn s -> not Player.is_played?(s) end)
-    |> _play_or_select()
-    |> (fn dir -> _new_directory(state, dir) end).()
+    |> (fn dir -> _play_or_select(state, dir, state.directory) end).()
   end
 
   # change mode
@@ -346,49 +351,47 @@ defmodule Arcticmc.CLI do
 
   defp _select_entry_at(%__MODULE__{directory: base, entries: entries} = state, pos) do
     directory = Enum.at(entries, pos)
-    directory = _play_or_select(directory, base)
-    _new_directory(state, directory)
+    _play_or_select(state, directory, base)
   end
 
-  defp _new_directory(state, directory) do
+  defp _new_directory(state, directory, opts \\ []) do
+    reset = Keyword.get(opts, :reset_cursor, true)
     entries = Paths.list_items_to_print(directory)
 
     %__MODULE__{
       state
       | directory: directory,
         entries: entries,
-        cursor_pos: 0,
-        scroll_pos: 0,
+        cursor_pos: if(reset, do: 0, else: state.cursor_pos),
+        scroll_pos: if(reset, do: 0, else: state.scroll_pos),
         selection: nil
     }
   end
 
-  defp _play_or_select(selection, base \\ "")
+  defp _play_or_select(state, "..", nil), do: _new_directory(state, nil)
 
-  defp _play_or_select("..", nil), do: nil
-
-  defp _play_or_select("..", base) do
+  defp _play_or_select(state, "..", base) do
     # Return to home directory if at top level
     if base in Paths.list_items_to_print(nil) do
-      nil
+      _new_directory(state, nil)
     else
-      Paths.parent_directory(base)
+      _new_directory(state, Paths.parent_directory(base))
     end
   end
 
-  defp _play_or_select(nil, _base), do: nil
+  defp _play_or_select(state, nil, _base), do: _new_directory(state, nil)
 
-  defp _play_or_select(selection, _base) do
+  defp _play_or_select(state, selection, _base) do
     if File.dir?(selection) do
-      selection
+      _new_directory(state, selection)
     else
-      Player.play_file(selection)
+      new_state = %__MODULE__{state | currently_playing: selection}
+      {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
     end
   end
 
   defp _handle_esc(%__MODULE__{directory: base} = state) do
-    directory = _play_or_select("..", base)
-    _new_directory(state, directory)
+    _play_or_select(state, "..", base)
   end
 
   defp _rename_entry(%__MODULE__{cursor_pos: pos, entries: entries} = state) do
