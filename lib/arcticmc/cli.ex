@@ -327,9 +327,14 @@ defmodule Arcticmc.CLI do
 
   defp _next_directory_or_file(%__MODULE__{entries: entries} = state) do
     entries
+    |> Enum.with_index()
     |> tl()
-    |> Enum.find(fn s -> not Player.is_played?(s) end)
-    |> (fn dir -> _play_or_select(state, dir, state.directory) end).()
+    |> Enum.find(fn {s, _i} -> not Player.is_played?(s) end)
+    |> (fn {dir, idx} ->
+      state
+      |> _change_cursor_pos(idx)
+      |> _play_or_select(dir, state.directory)
+    end).()
   end
 
   # change mode
@@ -447,8 +452,11 @@ defmodule Arcticmc.CLI do
   end
 
   defp _change_selection(state, new_sel) do
-    pos = String.to_integer(new_sel)
+    %__MODULE__{state | selection: new_sel}
+    |> _change_cursor_pos(String.to_integer(new_sel))
+  end
 
+  defp _change_cursor_pos(state, pos) do
     scroll =
       cond do
         state.scroll_pos > pos ->
@@ -461,7 +469,7 @@ defmodule Arcticmc.CLI do
           state.scroll_pos
       end
 
-    %__MODULE__{state | selection: new_sel, cursor_pos: pos, scroll_pos: scroll}
+    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll}
   end
 
   defp _terminal_size do
