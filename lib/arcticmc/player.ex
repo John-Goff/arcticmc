@@ -22,7 +22,7 @@ defmodule Arcticmc.Player do
 
     parent_dir = Paths.parent_directory(path)
 
-    if Enum.all?(File.ls!(parent_dir), &is_played?/1) do
+    if Enum.all?(tl(Paths.list_items_to_print(parent_dir)), &is_played?/1) do
       mark_played(parent_dir)
     else
       parent_dir
