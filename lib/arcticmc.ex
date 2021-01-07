@@ -6,16 +6,13 @@ defmodule Arcticmc do
   alias Arcticmc.Config
 
   def start(_type, _args) do
-    # load the viewport configuration from config
-    main_viewport_config = Application.get_env(:arcticmc, :viewport)
-
     Config.initialize_config()
 
-    # start the application with the viewport
     children = [
-      {Scenic, viewports: [main_viewport_config]}
+      {Ratatouille.Runtime.Supervisor,
+       runtime: [app: Arcticmc.CLI, quit_events: [key: Ratatouille.Constants.key(:ctrl_d)]]}
     ]
 
-    Supervisor.start_link(children, strategy: :one_for_one)
+    Supervisor.start_link(children, strategy: :one_for_one, name: Arcticmc.Supervisor)
   end
 end

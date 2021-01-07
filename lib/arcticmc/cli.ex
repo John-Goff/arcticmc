@@ -324,10 +324,10 @@ defmodule Arcticmc.CLI do
     |> tl()
     |> Enum.find(fn {s, _i} -> not Player.is_played?(s) end)
     |> (fn {dir, idx} ->
-      state
-      |> _change_cursor_pos(idx)
-      |> _play_or_select(dir, state.directory)
-    end).()
+          state
+          |> _change_cursor_pos(idx)
+          |> _play_or_select(dir, state.directory)
+        end).()
   end
 
   # change mode

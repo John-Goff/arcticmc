@@ -68,9 +68,15 @@ defmodule Arcticmc.Paths do
       try do
         type
         |> get()
-        |> (fn str -> Logger.debug("Fetched from config: #{str}"); str end).()
+        |> (fn str ->
+              Logger.debug("Fetched from config: #{str}")
+              str
+            end).()
         |> Path.expand()
-        |> (fn str -> Logger.debug("Expanded: #{str}"); str end).()
+        |> (fn str ->
+              Logger.debug("Expanded: #{str}")
+              str
+            end).()
       rescue
         _ -> ""
       end
