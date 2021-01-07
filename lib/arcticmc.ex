@@ -10,7 +10,7 @@ defmodule Arcticmc do
 
     children = [
       {Ratatouille.Runtime.Supervisor,
-       runtime: [app: Arcticmc.CLI, quit_events: [key: Ratatouille.Constants.key(:ctrl_d)]]}
+       runtime: [app: Arcticmc.CLI, quit_events: []]}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Arcticmc.Supervisor)

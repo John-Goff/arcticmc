@@ -173,6 +173,9 @@ defmodule Arcticmc.CLI do
       {:event, %{ch: ?r}} ->
         _rename_entry(state)
 
+      {:event, %{ch: ?q}} ->
+        System.stop(0)
+
       {:currently_playing, directory} ->
         %__MODULE__{state | currently_playing: nil}
         |> _new_directory(directory, reset_cursor: false)
@@ -194,7 +197,7 @@ defmodule Arcticmc.CLI do
           "Now Playing: #{Paths.file_name_without_extension(state.currently_playing)}"
 
         true ->
-          "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, (m)ark played/unplayed, (r)ename, ctrl-d to quit"
+          "(n)ext file, (p)layback speed: #{Config.get(:playback_speed)}, (m)ark played/unplayed, (r)ename, (q)uit"
       end
 
     bottom_bar = bar(do: label(content: bbcontent))
