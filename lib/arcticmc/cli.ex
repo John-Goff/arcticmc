@@ -4,6 +4,7 @@ defmodule Arcticmc.CLI do
   import Ratatouille.View
   import Ratatouille.Constants, only: [key: 1]
   alias Arcticmc.Config
+  alias Arcticmc.Metadata
   alias Arcticmc.Paths
   alias Arcticmc.Player
   alias Ratatouille.Runtime.Command
@@ -37,7 +38,8 @@ defmodule Arcticmc.CLI do
     :playback_overlay,
     :selection,
     :rename,
-    :currently_playing
+    :currently_playing,
+    :metadata
   ]
 
   def run(opts \\ []),
@@ -53,7 +55,8 @@ defmodule Arcticmc.CLI do
       playback_overlay: false,
       lines: lines,
       cols: cols,
-      entries: entries
+      entries: entries,
+      metadata: ""
     }
   end
 
@@ -210,6 +213,12 @@ defmodule Arcticmc.CLI do
           end
         end
 
+        column(size: 9) do
+          panel(title: "Description", height: :fill) do
+            label(content: state.metadata, wrap: true)
+          end
+        end
+
         if state.playback_overlay do
           overlay(padding: 15) do
             panel(title: "Change playback speed", height: :fill) do
@@ -294,7 +303,7 @@ defmodule Arcticmc.CLI do
   defp _spaces(num) when num >= 100 and num <= 999, do: "  "
   defp _spaces(num) when num >= 1000 and num <= 9999, do: " "
 
-  defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @up) when pos > 0 do
+  defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @up) when pos > 0 do
     pos = pos - 1
 
     scroll =
@@ -304,11 +313,19 @@ defmodule Arcticmc.CLI do
         state.scroll_pos
       end
 
-    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, selection: nil}
+    metadata =
+      case Metadata.get_metadata(Enum.at(entries, pos)) do
+        {:ok, metadata} -> metadata
+        _ -> ""
+      end
+
+    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, selection: nil, metadata: metadata}
   end
 
   defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
        when pos < length(entries) - 1 do
+    pos = pos + 1
+
     scroll =
       if pos >= state.lines - @reserved_lines + state.scroll_pos do
         state.scroll_pos + 1
@@ -316,7 +333,13 @@ defmodule Arcticmc.CLI do
         state.scroll_pos
       end
 
-    %__MODULE__{state | cursor_pos: pos + 1, scroll_pos: scroll, selection: nil}
+    metadata =
+      case Metadata.get_metadata(Enum.at(entries, pos)) do
+        {:ok, metadata} -> metadata
+        _ -> ""
+      end
+
+    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, selection: nil, metadata: metadata}
   end
 
   # When at the top or bottom, do not move cursor
