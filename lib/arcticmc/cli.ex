@@ -3,6 +3,7 @@ defmodule Arcticmc.CLI do
 
   import Ratatouille.View
   import Ratatouille.Constants, only: [key: 1]
+  import SweetXml, only: [sigil_x: 2]
   alias Arcticmc.Config
   alias Arcticmc.Metadata
   alias Arcticmc.Paths
@@ -303,43 +304,13 @@ defmodule Arcticmc.CLI do
   defp _spaces(num) when num >= 100 and num <= 999, do: "  "
   defp _spaces(num) when num >= 1000 and num <= 9999, do: " "
 
-  defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @up) when pos > 0 do
-    pos = pos - 1
-
-    scroll =
-      if state.scroll_pos == pos do
-        state.scroll_pos - 1
-      else
-        state.scroll_pos
-      end
-
-    metadata =
-      case Metadata.get_metadata(Enum.at(entries, pos)) do
-        {:ok, metadata} -> metadata
-        _ -> ""
-      end
-
-    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, selection: nil, metadata: metadata}
+  defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @up) when pos > 0 do
+    %__MODULE__{state | selection: nil} |> _change_cursor_pos(pos - 1)
   end
 
   defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
        when pos < length(entries) - 1 do
-    pos = pos + 1
-
-    scroll =
-      if pos >= state.lines - @reserved_lines + state.scroll_pos do
-        state.scroll_pos + 1
-      else
-        state.scroll_pos
-      end
-
-    metadata =
-      case Metadata.get_metadata(Enum.at(entries, pos)) do
-        {:ok, metadata} -> metadata
-        _ -> ""
-      end
-
-    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, selection: nil, metadata: metadata}
+    %__MODULE__{state | selection: nil} |> _change_cursor_pos(pos + 1)
   end
 
   # When at the top or bottom, do not move cursor
@@ -489,7 +460,13 @@ defmodule Arcticmc.CLI do
           state.scroll_pos
       end
 
-    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll}
+    metadata =
+      case Metadata.get_metadata(Enum.at(state.entries, pos)) do
+        {:ok, metadata} -> metadata
+        _ -> ""
+      end
+
+    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, metadata: metadata}
   end
 
   defp _terminal_size do
