@@ -26,6 +26,7 @@ defmodule Arcticmc.MixProject do
       {:scenic, "~> 0.10"},
       {:scenic_driver_glfw, "~> 0.10", targets: :host},
       {:ratatouille, "~> 0.5.0"},
+      {:logger_file_backend, "~> 0.0.11"},
       {:yaml_elixir, "~> 2.5.0"}
     ]
   end
