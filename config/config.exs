@@ -20,7 +20,9 @@ config :logger, backends: [{LoggerFileBackend, :debug_log}]
 
 config :logger, :debug_log,
   path: "debug.log",
-  level: :error
+  level: :debug
+
+config :logger, :console, level: :error
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment

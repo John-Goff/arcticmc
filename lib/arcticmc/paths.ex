@@ -3,6 +3,7 @@ defmodule Arcticmc.Paths do
   Module for accessing the currently defined media paths
   """
 
+  require Logger
   alias Arcticmc.Player
 
   @allowed_keys [:tv, :movies]
@@ -49,7 +50,7 @@ defmodule Arcticmc.Paths do
     |> Path.split()
     |> Enum.reverse()
     |> case do
-      [] -> []
+      [] -> [""]
       list -> tl(list)
     end
     |> Enum.reverse()
@@ -65,7 +66,11 @@ defmodule Arcticmc.Paths do
     allowed_paths()
     |> Enum.map(fn type ->
       try do
-        get(type)
+        type
+        |> get()
+        |> (fn str -> Logger.debug("Fetched from config: #{str}"); str end).()
+        |> Path.expand()
+        |> (fn str -> Logger.debug("Expanded: #{str}"); str end).()
       rescue
         _ -> ""
       end
