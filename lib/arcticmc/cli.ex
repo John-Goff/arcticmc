@@ -25,7 +25,7 @@ defmodule Arcticmc.CLI do
   ]
 
   # How many lines are taken up by UI elements
-  @reserved_lines 5
+  @reserved_lines 7
 
   defstruct [
     :directory,
@@ -203,29 +203,35 @@ defmodule Arcticmc.CLI do
     bottom_bar = bar(do: label(content: bbcontent))
 
     view(top_bar: top_bar, bottom_bar: bottom_bar) do
-      _print_current_directory(state)
-
-      if state.playback_overlay do
-        overlay(padding: 15) do
-          panel(title: "Change playback speed", height: :fill) do
-            label(content: "Current speed: #{Config.get(:playback_speed)}")
+      row do
+        column(size: 3) do
+          panel(title: "Selection", height: :fill) do
+            _print_current_directory(state)
           end
         end
-      end
 
-      if not is_nil(state.rename) do
-        parts = state.rename.name |> String.graphemes()
+        if state.playback_overlay do
+          overlay(padding: 15) do
+            panel(title: "Change playback speed", height: :fill) do
+              label(content: "Current speed: #{Config.get(:playback_speed)}")
+            end
+          end
+        end
 
-        name =
-          parts
-          |> Enum.take(state.rename.cursor)
-          |> Kernel.++(["▌"])
-          |> Kernel.++(Enum.drop(parts, state.rename.cursor))
-          |> Enum.join()
+        if not is_nil(state.rename) do
+          parts = state.rename.name |> String.graphemes()
 
-        overlay(padding: 15) do
-          panel(title: "Rename File or Directory", height: :fill) do
-            label(content: name)
+          name =
+            parts
+            |> Enum.take(state.rename.cursor)
+            |> Kernel.++(["▌"])
+            |> Kernel.++(Enum.drop(parts, state.rename.cursor))
+            |> Enum.join()
+
+          overlay(padding: 15) do
+            panel(title: "Rename File or Directory", height: :fill) do
+              label(content: name)
+            end
           end
         end
       end
@@ -253,18 +259,9 @@ defmodule Arcticmc.CLI do
     cursor = Keyword.get(opts, :cursor, 0)
     scroll = Keyword.get(opts, :scroll, 0)
 
-    header =
-      table_row do
-        table_cell(content: "Selection")
-        table_cell(content: "Directory")
-        table_cell(content: "Played")
-        table_cell(content: "Item")
-      end
-
-    table_rows =
+    items =
       paths
       |> Enum.with_index()
-      |> Enum.drop(scroll)
       |> Enum.map(fn {path, idx} ->
         item = Paths.file_name_without_extension(path)
 
@@ -284,18 +281,22 @@ defmodule Arcticmc.CLI do
             opts
           end
 
-        table_row do
-          table_cell([{:content, "#{idx + offset})"} | opts])
-          table_cell([{:content, if(File.dir?(path), do: "*")} | opts])
-          table_cell([{:content, if(Player.is_played?(path), do: "*", else: "")} | opts])
-          table_cell([{:content, item} | opts])
-        end
+        label([{:content, "#{idx + offset})#{_spaces(idx + offset)}#{item}"} | opts])
       end)
 
-    table([header | table_rows])
+    viewport(offset_y: scroll) do
+      items
+    end
   end
 
+  defp _spaces(num) when num >= 0 and num <= 9, do: "    "
+  defp _spaces(num) when num >= 10 and num <= 99, do: "   "
+  defp _spaces(num) when num >= 100 and num <= 999, do: "  "
+  defp _spaces(num) when num >= 1000 and num <= 9999, do: " "
+
   defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @up) when pos > 0 do
+    pos = pos - 1
+
     scroll =
       if state.scroll_pos == pos do
         state.scroll_pos - 1
@@ -303,7 +304,7 @@ defmodule Arcticmc.CLI do
         state.scroll_pos
       end
 
-    %__MODULE__{state | cursor_pos: pos - 1, scroll_pos: scroll, selection: nil}
+    %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, selection: nil}
   end
 
   defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
