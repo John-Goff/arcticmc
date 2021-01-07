@@ -14,13 +14,7 @@ defmodule Arcticmc.Metadata do
       if String.contains?(filename, ".") do
         parent = Paths.parent_directory(path)
 
-        filename =
-          filename
-          |> String.reverse()
-          |> String.split(".", parts: 2)
-          |> tl()
-          |> String.reverse()
-          |> (fn str -> "#{str}.nfo" end).()
+        filename = "#{filename}.nfo"
 
         File.read(Path.join([parent, filename]))
       else
