@@ -300,12 +300,7 @@ defmodule Arcticmc.CLI do
         state.scroll_pos
       end
 
-    %__MODULE__{state | cursor_pos: pos - 1, scroll_pos: scroll}
-  end
-
-  # When at the top, do not move cursor
-  defp _move_cursor(%__MODULE__{} = state, @up) do
-    state
+    %__MODULE__{state | cursor_pos: pos - 1, scroll_pos: scroll, selection: nil}
   end
 
   defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
@@ -317,13 +312,11 @@ defmodule Arcticmc.CLI do
         state.scroll_pos
       end
 
-    %__MODULE__{state | cursor_pos: pos + 1, scroll_pos: scroll}
+    %__MODULE__{state | cursor_pos: pos + 1, scroll_pos: scroll, selection: nil}
   end
 
-  # When at the bottom, do not move cursor
-  defp _move_cursor(%__MODULE__{} = state, @down) do
-    state
-  end
+  # When at the top or bottom, do not move cursor
+  defp _move_cursor(%__MODULE__{} = state, _key), do: state
 
   defp _next_directory_or_file(%__MODULE__{entries: entries} = state) do
     entries
