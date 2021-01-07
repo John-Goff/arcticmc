@@ -23,10 +23,16 @@ defmodule Arcticmc.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # Display
       {:scenic, "~> 0.10"},
       {:scenic_driver_glfw, "~> 0.10", targets: :host},
       {:ratatouille, "~> 0.5.0"},
+
+      # Tools
       {:logger_file_backend, "~> 0.0.11"},
+
+      # Parsing config/metadata
+      {:sweet_xml, "~> 0.6.0"},
       {:yaml_elixir, "~> 2.5.0"}
     ]
   end
