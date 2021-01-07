@@ -216,7 +216,7 @@ defmodule Arcticmc.CLI do
 
         column(size: 9) do
           panel(title: "Description", height: :fill) do
-            label(content: state.metadata, wrap: true)
+            _render_description(state.metadata)
           end
         end
 
@@ -303,6 +303,45 @@ defmodule Arcticmc.CLI do
   defp _spaces(num) when num >= 10 and num <= 99, do: "   "
   defp _spaces(num) when num >= 100 and num <= 999, do: "  "
   defp _spaces(num) when num >= 1000 and num <= 9999, do: " "
+
+  defp _render_description(""), do: []
+  defp _render_description(metadata) do
+    items = [label(content: "Title: #{SweetXml.xpath(metadata, ~x"//title/text()")}")]
+
+    items =
+      if aired = SweetXml.xpath(metadata, ~x"//aired/text()") do
+        [label(content: "Date Aired: #{aired}") | items]
+      else
+        items
+      end
+
+    items =
+      if year = SweetXml.xpath(metadata, ~x"//year/text()") do
+        [label(content: "Year: #{year}") | items]
+      else
+        items
+      end
+
+    items =
+      if season = SweetXml.xpath(metadata, ~x"//season/text()") do
+        if episode = SweetXml.xpath(metadata, ~x"//episode/text()") do
+          [label(content: "Series: S#{season}E#{episode}") | items]
+        else
+          items
+        end
+      else
+        items
+      end
+
+    items =
+      if plot = SweetXml.xpath(metadata, ~x"//plot/text()") do
+        [label(content: "Description: #{plot}", wrap: true) | items]
+      else
+        items
+      end
+
+    Enum.reverse(items)
+  end
 
   defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @up) when pos > 0 do
     %__MODULE__{state | selection: nil} |> _change_cursor_pos(pos - 1)
