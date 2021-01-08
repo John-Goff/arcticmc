@@ -30,31 +30,14 @@ defmodule Arcticmc.Paths do
     else
       path
       |> last_elem_without_checkmark()
-      |> String.split(".")
-      |> Enum.reverse()
-      |> tl()
-      |> Enum.reverse()
-      |> Enum.join(".")
+      |> Path.rootname()
     end
   end
 
   defp last_elem_without_checkmark(path) do
     path
-    |> Path.split()
-    |> List.last()
+    |> Path.basename()
     |> String.replace(Player.played(), "")
-  end
-
-  def parent_directory(directory) do
-    directory
-    |> Path.split()
-    |> Enum.reverse()
-    |> case do
-      [] -> [""]
-      list -> tl(list)
-    end
-    |> Enum.reverse()
-    |> Path.join()
   end
 
   @video_extensions ["avi", "mp4", "mkv"]

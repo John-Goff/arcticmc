@@ -9,8 +9,7 @@ defmodule Arcticmc do
     Config.initialize_config()
 
     children = [
-      {Ratatouille.Runtime.Supervisor,
-       runtime: [app: Arcticmc.CLI, quit_events: []]}
+      {Ratatouille.Runtime.Supervisor, runtime: [app: Arcticmc.CLI, quit_events: []]}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Arcticmc.Supervisor)
