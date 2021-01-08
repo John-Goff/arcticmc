@@ -3,6 +3,7 @@ defmodule Arcticmc.Player do
   Handles playing and renaming files.
   """
 
+  require Logger
   alias Arcticmc.Config
   alias Arcticmc.Paths
 
@@ -30,6 +31,7 @@ defmodule Arcticmc.Player do
   end
 
   defp _open_player(path) do
+    Logger.debug("Playing file #{path}")
     options = ["--rate", "#{Config.get(:playback_speed)}", path]
 
     options =
@@ -43,11 +45,32 @@ defmodule Arcticmc.Player do
   end
 
   def is_played?(path) do
-    String.contains?(path, @played)
+    String.contains?(Path.basename(path), @played)
   end
 
+  @doc """
+  Marks a file as played.
+
+  Adds the #{@played} character to the filename, and returns the new path of the file.
+  """
   def mark_played(path) do
+    Logger.debug(fn -> "Marking #{Path.basename(path)} as played" end)
     new_path = add_played_to_path(path)
+    File.rename(path, new_path)
+    new_path
+  end
+
+  @doc """
+  Marks a file as unplayed.
+
+  Removes the #{@played} character from the filename.
+  """
+  def mark_unplayed(path) do
+    Logger.debug(fn -> "Marking #{Path.basename(path)} as unplayed" end)
+    filename = path |> Path.basename() |> String.replace(@played, "")
+    new_path = Path.join([Path.dirname(path), filename])
+    Logger.debug(fn -> "path: #{path}" end)
+    Logger.debug(fn -> "new_path: #{new_path}" end)
     File.rename(path, new_path)
     new_path
   end

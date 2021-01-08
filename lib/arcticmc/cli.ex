@@ -456,7 +456,7 @@ defmodule Arcticmc.CLI do
     directory = Enum.at(entries, pos)
 
     if Player.is_played?(directory) do
-      File.rename!(directory, String.replace(directory, Player.played(), ""))
+      Player.mark_unplayed(directory)
     else
       Player.mark_played(directory)
     end
