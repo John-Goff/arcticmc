@@ -15,19 +15,22 @@ defmodule Arcticmc.Player do
   def play_file(path) do
     _open_player(path)
 
-    path =
-      if is_played?(path) do
-        path
-      else
-        mark_played(path)
-      end
+    path = _mark_played_if_not(path)
 
     parent_dir = Path.dirname(path)
 
     if Enum.all?(tl(Paths.list_items_to_print(parent_dir)), &is_played?/1) do
-      mark_played(parent_dir)
+      _mark_played_if_not(parent_dir)
     else
       parent_dir
+    end
+  end
+
+  defp _mark_played_if_not(path) do
+    if is_played?(path) do
+      path
+    else
+      mark_played(path)
     end
   end
 
