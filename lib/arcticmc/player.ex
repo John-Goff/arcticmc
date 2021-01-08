@@ -5,6 +5,7 @@ defmodule Arcticmc.Player do
 
   require Logger
   alias Arcticmc.Config
+  alias Arcticmc.Metadata
   alias Arcticmc.Paths
 
   @played "✓"
@@ -56,7 +57,12 @@ defmodule Arcticmc.Player do
   def mark_played(path) do
     Logger.debug(fn -> "Marking #{Path.basename(path)} as played" end)
     new_path = add_played_to_path(path)
+    metadata_path = Metadata.metadata_path(path)
     File.rename(path, new_path)
+
+    if File.exists?(metadata_path),
+      do: File.rename(metadata_path, add_played_to_path(metadata_path))
+
     new_path
   end
 
@@ -79,17 +85,7 @@ defmodule Arcticmc.Player do
     if File.dir?(path) or not String.contains?(path, ".") do
       path <> @played
     else
-      [working | rest_path] =
-        path
-        |> Path.split()
-        |> Enum.reverse()
-
-      parts = String.split(working, ".")
-
-      [ext | rest] = Enum.reverse(parts)
-      new_filename = Enum.join(Enum.reverse(rest), ".") <> @played
-      new = "#{new_filename}.#{ext}"
-      Path.join(Enum.reverse([new | rest_path]))
+      Path.rootname(path) <> @played <> Path.extname(path)
     end
   end
 end
