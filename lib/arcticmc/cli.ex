@@ -305,6 +305,7 @@ defmodule Arcticmc.CLI do
   defp _spaces(num) when num >= 1000 and num <= 9999, do: " "
 
   defp _render_description(""), do: []
+
   defp _render_description(metadata) do
     items = [label(content: "Title: #{SweetXml.xpath(metadata, ~x"//title/text()")}")]
 
@@ -410,7 +411,7 @@ defmodule Arcticmc.CLI do
     if base in Paths.list_items_to_print(nil) do
       _new_directory(state, nil)
     else
-      _new_directory(state, Paths.parent_directory(base))
+      _new_directory(state, Path.dirname(base))
     end
   end
 
