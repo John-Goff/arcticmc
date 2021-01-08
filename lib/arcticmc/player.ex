@@ -75,8 +75,13 @@ defmodule Arcticmc.Player do
     Logger.debug(fn -> "Marking #{Path.basename(path)} as unplayed" end)
     filename = path |> Path.basename() |> String.replace(@played, "")
     new_path = Path.join([Path.dirname(path), filename])
-    Logger.debug(fn -> "path: #{path}" end)
-    Logger.debug(fn -> "new_path: #{new_path}" end)
+    metadata_path = Metadata.metadata_path(path)
+
+    if File.exists?(metadata_path) do
+      filename = metadata_path |> Path.basename() |> String.replace(@played, "")
+      File.rename(metadata_path, Path.join([Path.dirname(metadata_path), filename]))
+    end
+
     File.rename(path, new_path)
     new_path
   end
