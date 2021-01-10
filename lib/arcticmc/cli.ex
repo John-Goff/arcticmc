@@ -219,29 +219,29 @@ defmodule Arcticmc.CLI do
             _render_description(state.metadata)
           end
         end
+      end
 
-        if state.playback_overlay do
-          overlay(padding: 15) do
-            panel(title: "Change playback speed", height: :fill) do
-              label(content: "Current speed: #{Config.get(:playback_speed)}")
-            end
+      if state.playback_overlay do
+        overlay(padding: 15) do
+          panel(title: "Change playback speed", height: :fill) do
+            label(content: "Current speed: #{Config.get(:playback_speed)}")
           end
         end
+      end
 
-        if not is_nil(state.rename) do
-          parts = state.rename.name |> String.graphemes()
+      if not is_nil(state.rename) do
+        parts = state.rename.name |> String.graphemes()
 
-          name =
-            parts
-            |> Enum.take(state.rename.cursor)
-            |> Kernel.++(["▌"])
-            |> Kernel.++(Enum.drop(parts, state.rename.cursor))
-            |> Enum.join()
+        name =
+          parts
+          |> Enum.take(state.rename.cursor)
+          |> Kernel.++(["▌"])
+          |> Kernel.++(Enum.drop(parts, state.rename.cursor))
+          |> Enum.join()
 
-          overlay(padding: 15) do
-            panel(title: "Rename File or Directory", height: :fill) do
-              label(content: name)
-            end
+        overlay(padding: 15) do
+          panel(title: "Rename File or Directory", height: :fill) do
+            label(content: name)
           end
         end
       end
