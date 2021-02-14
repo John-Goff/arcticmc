@@ -405,18 +405,18 @@ defmodule Arcticmc.CLI do
     }
   end
 
-  defp _play_or_select(state, "..", nil), do: _new_directory(state, nil)
+  defp _play_or_select(state, "..", nil), do: _reset_to_base_dir(state)
 
   defp _play_or_select(state, "..", base) do
     # Return to home directory if at top level
-    if base in Paths.list_items_to_print(nil) do
-      _new_directory(state, nil)
+    if base in Enum.map(Paths.list_items_to_print(nil), &elem(&1, 1)) do
+      _reset_to_base_dir(state)
     else
       _new_directory(state, Path.dirname(base))
     end
   end
 
-  defp _play_or_select(state, nil, _base), do: _new_directory(%__MODULE__{state | mode: nil}, nil)
+  defp _play_or_select(state, nil, _base), do: _reset_to_base_dir(state)
 
   defp _play_or_select(state, {mode, selection}, _base) do
     if File.dir?(selection) do
@@ -435,6 +435,8 @@ defmodule Arcticmc.CLI do
       {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
     end
   end
+
+  defp _reset_to_base_dir(state), do: _new_directory(%__MODULE__{state | mode: nil}, nil)
 
   defp _handle_esc(%__MODULE__{directory: base} = state) do
     _play_or_select(state, "..", base)
