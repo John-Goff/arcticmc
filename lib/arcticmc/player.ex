@@ -48,9 +48,8 @@ defmodule Arcticmc.Player do
     System.cmd("vlc", options, stderr_to_stdout: true)
   end
 
-  def is_played?(path) do
-    String.contains?(Path.basename(path), @played)
-  end
+  def is_played?({_mode, path}), do: is_played?(path)
+  def is_played?(path), do: String.contains?(Path.basename(path), @played)
 
   @doc """
   Marks a file as played.
