@@ -60,12 +60,13 @@ defmodule Arcticmc.Paths do
               Logger.debug("Expanded: #{str}")
               str
             end).()
+        |> (fn str -> {type, str} end).()
       rescue
         _ -> ""
       end
     end)
     |> Enum.reject(fn s -> s == "" end)
-    |> Enum.sort()
+    |> Enum.sort(fn {_, a}, {_, b} -> a < b end)
   end
 
   def list_items_to_print(directory) do
