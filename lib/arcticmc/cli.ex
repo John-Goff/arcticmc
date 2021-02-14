@@ -40,7 +40,8 @@ defmodule Arcticmc.CLI do
     :selection,
     :rename,
     :currently_playing,
-    :metadata
+    :metadata,
+    :mode
   ]
 
   def run(opts \\ []),
@@ -415,7 +416,16 @@ defmodule Arcticmc.CLI do
     end
   end
 
-  defp _play_or_select(state, nil, _base), do: _new_directory(state, nil)
+  defp _play_or_select(state, nil, _base), do: _new_directory(%__MODULE__{state | mode: nil}, nil)
+
+  defp _play_or_select(state, {mode, selection}, _base) do
+    if File.dir?(selection) do
+      _new_directory(%__MODULE__{state | mode: mode}, selection)
+    else
+      new_state = %__MODULE__{state | currently_playing: selection}
+      {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
+    end
+  end
 
   defp _play_or_select(state, selection, _base) do
     if File.dir?(selection) do
