@@ -274,6 +274,7 @@ defmodule Arcticmc.CLI do
       paths
       |> Enum.with_index()
       |> Enum.map(fn {path, idx} ->
+        path = if is_tuple(path), do: elem(path, 1), else: path
         item = Paths.file_name_without_extension(path)
 
         colour =

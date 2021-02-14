@@ -24,6 +24,8 @@ defmodule Arcticmc.Paths do
     end
   end
 
+  def file_name_without_extension({_mode, path}), do: file_name_without_extension(path)
+
   def file_name_without_extension(path) do
     if File.dir?(path) do
       last_elem_without_checkmark(path)
