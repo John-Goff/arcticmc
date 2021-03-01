@@ -5,7 +5,7 @@ defmodule Arcticmc.Metadata do
 
   require Logger
 
-  def get_metadata(path) do
+  def get_metadata(path) when is_binary(path) do
     path =
       cond do
         File.dir?(path) ->
@@ -20,6 +20,11 @@ defmodule Arcticmc.Metadata do
 
     Logger.debug("Reading metadata from #{path}")
     File.read(path)
+  end
+
+  def get_metadata(path) do
+    Logger.debug("Attempting to get metadata for an invalid path: #{inspect(path)}")
+    ""
   end
 
   @doc """
