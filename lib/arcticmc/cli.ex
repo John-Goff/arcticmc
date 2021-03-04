@@ -419,26 +419,26 @@ defmodule Arcticmc.CLI do
 
   defp _play_or_select(state, nil, _base), do: _reset_to_base_dir(state)
 
-  defp _play_or_select(state, {:movies, selection}, _base) do
+  defp _play_or_select(state, {mode, selection}, _base) do
     if File.dir?(selection) do
-      video_file = Paths.video_file(selection)
-
-      if is_nil(video_file) do
-        _new_directory(%__MODULE__{state | mode: :movies}, selection)
-      else
-        video_path = Path.join([selection, video_file])
-        new_state = %__MODULE__{state | currently_playing: video_path}
-        {new_state, Command.new(fn -> Player.play_file(video_path) end, :currently_playing)}
-      end
+      _new_directory(%__MODULE__{state | mode: mode}, selection)
     else
       new_state = %__MODULE__{state | currently_playing: selection}
       {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
     end
   end
 
-  defp _play_or_select(state, {mode, selection}, _base) do
+  defp _play_or_select(%__MODULE__{mode: :movies} = state, selection, _base) do
     if File.dir?(selection) do
-      _new_directory(%__MODULE__{state | mode: mode}, selection)
+      video_file = Paths.video_file(selection)
+
+      if is_nil(video_file) do
+        _new_directory(state, selection)
+      else
+        video_path = Path.join([selection, video_file])
+        new_state = %__MODULE__{state | currently_playing: video_path}
+        {new_state, Command.new(fn -> Player.play_file(video_path) end, :currently_playing)}
+      end
     else
       new_state = %__MODULE__{state | currently_playing: selection}
       {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
