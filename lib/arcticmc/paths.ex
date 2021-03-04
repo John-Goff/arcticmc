@@ -42,10 +42,16 @@ defmodule Arcticmc.Paths do
     |> String.replace(Player.played(), "")
   end
 
-  @video_extensions ["avi", "mp4", "mkv"]
+  # Must contain a beginning period, as this is what Path.extname returns
+  @video_extensions [".avi", ".mp4", ".mkv", ".m4v", ".flv"]
 
   @doc """
-  Lists items to print for a given directory
+  Lists items to print for a given directory.
+
+  Will only list other directories or video files.  Video file includes any
+  file that has the extension #{
+    @video_extensions |> tl() |> Enum.map(fn s -> "`#{s}`" end) |> Enum.join(", ")
+  }, or `#{hd(@video_extensions)}`
   """
   def list_items_to_print(nil) do
     allowed_paths()
@@ -83,10 +89,7 @@ defmodule Arcticmc.Paths do
           do: false,
           else:
             str
-            |> String.reverse()
-            |> String.split(".", parts: 2)
-            |> List.first()
-            |> String.reverse()
+            |> Path.extname()
             |> Kernel.in(@video_extensions)
             |> Kernel.not()
     end)
@@ -99,12 +102,14 @@ defmodule Arcticmc.Paths do
   Gets the filename of the largest video file in the directory.
 
   This is assumed to be the movie that is stored in this directory. Video file
-  includes any file that has the extension `avi`, `mp4` or `mkv`.
+  includes any file that has the extension #{
+    @video_extensions |> tl() |> Enum.map(fn s -> "`#{s}`" end) |> Enum.join(", ")
+  }, or `#{hd(@video_extensions)}`
   """
   def video_file(directory) do
     video_files =
       for file <- File.ls!(directory),
-          Path.extname(file) in [".avi", ".mp4", ".mkv"],
+          Path.extname(file) in @video_extensions,
           do: {file, File.stat!(Path.join([directory, file])).size}
 
     with {largest_file, _file_size} <-
