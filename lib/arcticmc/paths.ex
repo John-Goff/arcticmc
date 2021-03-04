@@ -104,7 +104,7 @@ defmodule Arcticmc.Paths do
   def video_file(directory) do
     video_files =
       for file <- File.ls!(directory),
-          IO.inspect(Path.extname(file)) in [".avi", ".mp4", ".mkv"],
+          Path.extname(file) in [".avi", ".mp4", ".mkv"],
           do: {file, File.stat!(Path.join([directory, file])).size}
 
     with {largest_file, _file_size} <-
