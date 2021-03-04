@@ -419,6 +419,23 @@ defmodule Arcticmc.CLI do
 
   defp _play_or_select(state, nil, _base), do: _reset_to_base_dir(state)
 
+  defp _play_or_select(state, {:movies, selection}, _base) do
+    if File.dir?(selection) do
+      video_file = Paths.video_file(selection)
+
+      if is_nil(video_file) do
+        _new_directory(%__MODULE__{state | mode: :movies}, selection)
+      else
+        video_path = Path.join([selection, video_file])
+        new_state = %__MODULE__{state | currently_playing: video_path}
+        {new_state, Command.new(fn -> Player.play_file(video_path) end, :currently_playing)}
+      end
+    else
+      new_state = %__MODULE__{state | currently_playing: selection}
+      {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
+    end
+  end
+
   defp _play_or_select(state, {mode, selection}, _base) do
     if File.dir?(selection) do
       _new_directory(%__MODULE__{state | mode: mode}, selection)
@@ -514,13 +531,31 @@ defmodule Arcticmc.CLI do
       end
 
     metadata =
-      case Metadata.get_metadata(Enum.at(state.entries, pos)) do
-        {:ok, metadata} -> metadata
-        _ -> ""
+      case state.mode do
+        :movies ->
+          selection = Enum.at(state.entries, pos)
+
+          if File.dir?(selection) do
+            video_file = Paths.video_file(selection)
+
+            if is_nil(video_file) do
+              _metadata_or_empty_string(Metadata.get_metadata(selection))
+            else
+              _metadata_or_empty_string(Metadata.get_metadata(Path.join([selection, video_file])))
+            end
+          else
+            _metadata_or_empty_string(Metadata.get_metadata(selection))
+          end
+
+        _ ->
+          _metadata_or_empty_string(Metadata.get_metadata(Enum.at(state.entries, pos)))
       end
 
     %__MODULE__{state | cursor_pos: pos, scroll_pos: scroll, metadata: metadata}
   end
+
+  defp _metadata_or_empty_string({:ok, metadata}), do: metadata
+  defp _metadata_or_empty_string(_error), do: ""
 
   defp _terminal_size do
     {:ok, lines} = Window.fetch(:height)
