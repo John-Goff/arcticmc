@@ -94,4 +94,24 @@ defmodule Arcticmc.Paths do
     |> Enum.sort()
     |> (fn paths -> [".." | paths] end).()
   end
+
+  @doc """
+  Gets the filename of the largest video file in the directory.
+
+  This is assumed to be the movie that is stored in this directory. Video file
+  includes any file that has the extension `avi`, `mp4` or `mkv`.
+  """
+  def video_file(directory) do
+    video_files =
+      for file <- File.ls!(directory),
+          IO.inspect(Path.extname(file)) in [".avi", ".mp4", ".mkv"],
+          do: {file, File.stat!(Path.join([directory, file])).size}
+
+    with {largest_file, _file_size} <-
+           video_files
+           |> Enum.sort(fn {_, f1}, {_, f2} -> f1 >= f2 end)
+           |> List.first() do
+      largest_file
+    end
+  end
 end
