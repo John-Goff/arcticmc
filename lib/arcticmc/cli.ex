@@ -153,6 +153,9 @@ defmodule Arcticmc.CLI do
       {:event, %{key: key}} when key in [@up, @down] ->
         _move_cursor(state, key)
 
+      {:event, %{ch: key}} when key in [?j, ?k] ->
+        _move_cursor(state, key)
+
       {:event, %{key: @enter}} ->
         _select_entry(state)
 
@@ -346,12 +349,13 @@ defmodule Arcticmc.CLI do
     Enum.reverse(items)
   end
 
-  defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, @up) when pos > 0 do
+  defp _move_cursor(%__MODULE__{cursor_pos: pos} = state, dir)
+       when pos > 0 and dir in [@up, ?k] do
     %__MODULE__{state | selection: nil} |> _change_cursor_pos(pos - 1)
   end
 
-  defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, @down)
-       when pos < length(entries) - 1 do
+  defp _move_cursor(%__MODULE__{cursor_pos: pos, entries: entries} = state, dir)
+       when pos < length(entries) - 1 and dir in [@down, ?j] do
     %__MODULE__{state | selection: nil} |> _change_cursor_pos(pos + 1)
   end
 
