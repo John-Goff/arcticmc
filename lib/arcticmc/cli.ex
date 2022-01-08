@@ -428,7 +428,7 @@ defmodule Arcticmc.CLI do
       _new_directory(%__MODULE__{state | mode: mode}, selection)
     else
       new_state = %__MODULE__{state | currently_playing: selection}
-      {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
+      {new_state, Command.new(fn -> Player.play_file(mode, selection) end, :currently_playing)}
     end
   end
 
@@ -441,11 +441,13 @@ defmodule Arcticmc.CLI do
       else
         video_path = Path.join([selection, video_file])
         new_state = %__MODULE__{state | currently_playing: video_path}
-        {new_state, Command.new(fn -> Player.play_file(video_path) end, :currently_playing)}
+
+        {new_state,
+         Command.new(fn -> Player.play_file(:movies, video_path) end, :currently_playing)}
       end
     else
       new_state = %__MODULE__{state | currently_playing: selection}
-      {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
+      {new_state, Command.new(fn -> Player.play_file(:movies, selection) end, :currently_playing)}
     end
   end
 
@@ -454,7 +456,9 @@ defmodule Arcticmc.CLI do
       _new_directory(state, selection)
     else
       new_state = %__MODULE__{state | currently_playing: selection}
-      {new_state, Command.new(fn -> Player.play_file(selection) end, :currently_playing)}
+
+      {new_state,
+       Command.new(fn -> Player.play_file(state.mode, selection) end, :currently_playing)}
     end
   end
 
