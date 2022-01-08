@@ -10,9 +10,24 @@ defmodule Arcticmc.Player do
 
   @played "✓"
 
+  @doc """
+  Character which marks an item as played.
+  """
+  @spec played() :: String.t()
   def played, do: @played
 
-  def play_file(path) do
+  @doc """
+  Plays the selected file and marks it as played.
+  """
+  def play_file(:movies, path) do
+    path |> _play_file() |> Path.dirname()
+  end
+
+  def play_file(_, path) do
+    _play_file(path)
+  end
+
+  defp _play_file(path) do
     _open_player(path)
 
     path = _mark_played_if_not(path)
@@ -88,6 +103,21 @@ defmodule Arcticmc.Player do
     new_path
   end
 
+  @doc """
+  Adds the #{@played} character to a file or directory.
+
+  If the given path is a directory, or it does not contain an extension, then the
+  #{@played} character is added to the end of the path. Otherwise, it is added at
+  the end of the base name and before the extension.
+
+  ## Examples
+
+      iex> Subject.add_played_to_path("test")
+      "test#{@played}"
+
+      iex> Subject.add_played_to_path("test.mp4")
+      "test#{@played}.mp4"
+  """
   def add_played_to_path(path) do
     if File.dir?(path) or not String.contains?(path, ".") do
       path <> @played
