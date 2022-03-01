@@ -30,6 +30,7 @@ defmodule Arcticmc.MixProject do
 
       # Tools
       {:logger_file_backend, "~> 0.0.11"},
+      {:natural_order, "~> 0.3.0"},
 
       # Parsing config/metadata
       {:sweet_xml, "~> 0.6.0"},

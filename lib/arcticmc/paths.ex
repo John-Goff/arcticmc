@@ -49,9 +49,7 @@ defmodule Arcticmc.Paths do
   Lists items to print for a given directory.
 
   Will only list other directories or video files.  Video file includes any
-  file that has the extension #{
-    @video_extensions |> tl() |> Enum.map(fn s -> "`#{s}`" end) |> Enum.join(", ")
-  }, or `#{hd(@video_extensions)}`
+  file that has the extension #{@video_extensions |> tl() |> Enum.map(fn s -> "`#{s}`" end) |> Enum.join(", ")}, or `#{hd(@video_extensions)}`
   """
   def list_items_to_print(nil) do
     allowed_paths()
@@ -94,7 +92,7 @@ defmodule Arcticmc.Paths do
             |> Kernel.not()
     end)
     |> Enum.map(fn item -> Path.join([directory, item]) end)
-    |> Enum.sort()
+    |> Enum.sort(NaturalOrder)
     |> (fn paths -> [".." | paths] end).()
   end
 
@@ -102,9 +100,7 @@ defmodule Arcticmc.Paths do
   Gets the filename of the largest video file in the directory.
 
   This is assumed to be the movie that is stored in this directory. Video file
-  includes any file that has the extension #{
-    @video_extensions |> tl() |> Enum.map(fn s -> "`#{s}`" end) |> Enum.join(", ")
-  }, or `#{hd(@video_extensions)}`
+  includes any file that has the extension #{@video_extensions |> tl() |> Enum.map(fn s -> "`#{s}`" end) |> Enum.join(", ")}, or `#{hd(@video_extensions)}`
   """
   def video_file(directory) do
     video_files =
