@@ -51,7 +51,7 @@ defmodule Arcticmc.Player do
 
   defp _open_player(path) do
     Logger.debug("Playing file #{path}")
-    options = ["--rate", "#{Config.get(:playback_speed)}", path]
+    options = ["--speed=#{Config.get(:playback_speed)}", path]
 
     options =
       if Config.get(:fullscreen) do
@@ -60,7 +60,7 @@ defmodule Arcticmc.Player do
         options
       end
 
-    System.cmd("vlc", options, stderr_to_stdout: true)
+    System.cmd("mpv", options, stderr_to_stdout: true)
   end
 
   def is_played?({_mode, path}), do: is_played?(path)

@@ -1,4 +1,4 @@
-ArcticMC is a media viewer/player that delegates video playback to VLC. The
+ArcticMC is a media viewer/player that delegates video playback to MPV. The
 primary use case is tracking which files are watched and which are not by
 adding a "✓" character to the file/folder name.
 

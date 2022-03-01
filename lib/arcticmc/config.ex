@@ -11,7 +11,7 @@ defmodule Arcticmc.Config do
   Key containing a map, which contains the list of media locations to load. Currently, only `tv` is
   supported as an option for media to load.
   `fullscreen`
-  Boolean, defaults to true. Controls whether the VLC instance launches in fullscreen or windowed
+  Boolean, defaults to true. Controls whether the MPV instance launches in fullscreen or windowed
   mode.
   `playback_speed`
   Float. Allows you to set the video playback speed. Defaults to `1.0`
