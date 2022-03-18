@@ -71,14 +71,26 @@ defmodule Arcticmc.Player do
 
   Adds the #{@played} character to the filename, and returns the new path of the file.
   """
+  @spec mark_played(path :: String.t()) :: String.t()
   def mark_played(path) do
     Logger.debug(fn -> "Marking #{Path.basename(path)} as played" end)
     new_path = add_played_to_path(path)
-    metadata_path = Metadata.metadata_path(path)
     File.rename(path, new_path)
+
+    metadata_path = Metadata.metadata_path(path)
 
     if File.exists?(metadata_path),
       do: File.rename(metadata_path, add_played_to_path(metadata_path))
+
+    subtitle_path = "#{Path.rootname(path)}.eng.srt"
+
+    if File.exists?(subtitle_path),
+      do: File.rename(subtitle_path, add_played_to_path(subtitle_path, ".eng.srt"))
+
+    subtitle_path = "#{Path.rootname(path)}-thumb.jpg"
+
+    if File.exists?(thumb_path),
+      do: File.rename(thumb_path, add_played_to_path(thumb_path, "-thumb.jpg"))
 
     new_path
   end
@@ -97,6 +109,20 @@ defmodule Arcticmc.Player do
     if File.exists?(metadata_path) do
       filename = metadata_path |> Path.basename() |> String.replace(@played, "")
       File.rename(metadata_path, Path.join([Path.dirname(metadata_path), filename]))
+    end
+
+    subtitle_path = "#{Path.rootname(path)}.eng.srt"
+
+    if File.exists?(subtitle_path) do
+      filename = subtitle_path |> Path.basename(".eng.srt") |> String.replace(@played, "")
+      File.rename(subtitle_path, Path.join([Path.dirname(subtitle_path), filename]))
+    end
+
+    thumb_path = "#{Path.rootname(path)}-thumb.jpg"
+
+    if File.exists?(thumb_path) do
+      filename = thumb_path |> Path.basename("-thumb.jpg") |> String.replace(@played, "")
+      File.rename(thumb_path, Path.join([Path.dirname(thumb_path), filename]))
     end
 
     File.rename(path, new_path)
@@ -118,11 +144,28 @@ defmodule Arcticmc.Player do
       iex> Subject.add_played_to_path("test.mp4")
       "test#{@played}.mp4"
   """
-  def add_played_to_path(path) do
+  def add_played_to_path(path), do: add_played_to_path(path, Path.extname(path))
+
+  @doc """
+  Adds the #{@played} character to a file or directory with a specific extension.
+
+  If the given path is a directory, or it does not contain an extension, then the
+  #{@played} character is added to the end of the path. Otherwise, it is added at
+  the end of the base name and before the extension.
+
+  ## Examples
+
+      iex> Subject.add_played_to_path("test", "")
+      "test#{@played}"
+
+      iex> Subject.add_played_to_path("test.eng.srt", ".eng.srt")
+      "test#{@played}.eng.srt"
+  """
+  def add_played_to_path(path, extension) do
     if File.dir?(path) or not String.contains?(path, ".") do
       path <> @played
     else
-      Path.rootname(path) <> @played <> Path.extname(path)
+      Path.rootname(path, extension) <> @played <> extension
     end
   end
 end
