@@ -159,8 +159,8 @@ defmodule Arcticmc.CLI do
       {:event, %{key: @enter}} ->
         _select_entry(state)
 
-      {:event, %{key: @esc}} ->
-        _handle_esc(state)
+      {:event, %{key: key}} when key in [@esc, ?-] ->
+        _navigate_to_parent_directory(state)
 
       {:event, %{key: key}}
       when key in @delete_keys and is_binary(state.selection) and state.selection != "" ->
@@ -464,7 +464,7 @@ defmodule Arcticmc.CLI do
 
   defp _reset_to_base_dir(state), do: _new_directory(%__MODULE__{state | mode: nil}, nil)
 
-  defp _handle_esc(%__MODULE__{directory: base} = state) do
+  defp _navigate_to_parent_directory(%__MODULE__{directory: base} = state) do
     _play_or_select(state, "..", base)
   end
 

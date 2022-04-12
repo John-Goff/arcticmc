@@ -87,7 +87,7 @@ defmodule Arcticmc.Player do
     if File.exists?(subtitle_path),
       do: File.rename(subtitle_path, add_played_to_path(subtitle_path, ".eng.srt"))
 
-    subtitle_path = "#{Path.rootname(path)}-thumb.jpg"
+    thumb_path = "#{Path.rootname(path)}-thumb.jpg"
 
     if File.exists?(thumb_path),
       do: File.rename(thumb_path, add_played_to_path(thumb_path, "-thumb.jpg"))
